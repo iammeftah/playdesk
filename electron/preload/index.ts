@@ -12,8 +12,9 @@ contextBridge.exposeInMainWorld('playdesk', {
     current: () => ipcRenderer.invoke('auth:current'),
   },
   license: {
-    status:   () => ipcRenderer.invoke('license:status'),
-    activate: (key: string) => ipcRenderer.invoke('license:activate', key),
+    status:     () => ipcRenderer.invoke('license:status'),
+    activate:   (key: string) => ipcRenderer.invoke('license:activate', key),
+    startTrial: () => ipcRenderer.invoke('license:startTrial'),
   },
   stations: {
     list:   () => ipcRenderer.invoke('stations:list'),

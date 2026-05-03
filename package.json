@@ -7,7 +7,7 @@
 
   "scripts": {
     "dev":          "concurrently -k \"vite\" \"npm run electron:dev\"",
-    "electron:dev": "wait-on tcp:5173 && tsc -p tsconfig.electron.json && mkdir -p dist-electron/licensing && cp electron/licensing/keys_embedded.js dist-electron/licensing/keys_embedded.js && electron . --no-sandbox",
+    "electron:dev": "wait-on tcp:5173 && tsc -p tsconfig.electron.json && mkdir -p dist-electron/licensing && cp electron/licensing/keys_embedded.js dist-electron/licensing/keys_embedded.js && electron . --no-sandbox ",
     "build":        "tsc -p tsconfig.json && vite build && tsc -p tsconfig.electron.json && mkdir -p dist-electron/licensing && cp electron/licensing/keys_embedded.js dist-electron/licensing/keys_embedded.js",
     "dist:win":     "npm run build && electron-builder --win",
     "postinstall":  "electron-builder install-app-deps",

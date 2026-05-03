@@ -43,7 +43,8 @@ CREATE TABLE IF NOT EXISTS license (
   key_hash TEXT,
   machine_id TEXT,
   activated_at TEXT,
-  active INTEGER NOT NULL DEFAULT 0
+  active INTEGER NOT NULL DEFAULT 0,
+  trial_started_at INTEGER
 );
 
 INSERT OR IGNORE INTO license (id, active) VALUES (1, 0);
@@ -51,11 +52,18 @@ INSERT OR IGNORE INTO license (id, active) VALUES (1, 0);
 
 export function runMigrations() {
   db.exec(INIT_SQL)
+
   // Safe column additions for existing DBs
-  const cols = (db.prepare("PRAGMA table_info(sessions)").all() as any[]).map((c: any) => c.name)
-  if (!cols.includes('started_at_unix')) db.exec('ALTER TABLE sessions ADD COLUMN started_at_unix INTEGER NOT NULL DEFAULT 0')
-  if (!cols.includes('ended_at_unix'))   db.exec('ALTER TABLE sessions ADD COLUMN ended_at_unix INTEGER')
-  if (!cols.includes('paused_at_unix'))  db.exec('ALTER TABLE sessions ADD COLUMN paused_at_unix INTEGER')
+  const sessionCols = (db.prepare('PRAGMA table_info(sessions)').all() as any[]).map((c: any) => c.name)
+  if (!sessionCols.includes('started_at_unix')) db.exec('ALTER TABLE sessions ADD COLUMN started_at_unix INTEGER NOT NULL DEFAULT 0')
+  if (!sessionCols.includes('ended_at_unix'))   db.exec('ALTER TABLE sessions ADD COLUMN ended_at_unix INTEGER')
+  if (!sessionCols.includes('paused_at_unix'))  db.exec('ALTER TABLE sessions ADD COLUMN paused_at_unix INTEGER')
+
+  // Trial column migration for existing installs
+  const licenseCols = (db.prepare('PRAGMA table_info(license)').all() as any[]).map((c: any) => c.name)
+  if (!licenseCols.includes('trial_started_at')) {
+    db.exec('ALTER TABLE license ADD COLUMN trial_started_at INTEGER')
+  }
 }
 
 export function seedAdmin() {

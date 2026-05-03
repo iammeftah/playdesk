@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useAuthStore } from './store/authStore'
+import { useAuthStore }    from './store/authStore'
 import { useLicenseStore } from './store/licenseStore'
 import ActivationPage from './pages/ActivationPage'
-import LoginPage from './pages/LoginPage'
-import CaissePage from './pages/CaissePage'
-import DashboardPage from './pages/DashboardPage'
-import SettingsPage from './pages/SettingsPage'
-import TitleBar from './components/layout/TitleBar'
-import Sidebar from './components/layout/Sidebar'
+import LoginPage      from './pages/LoginPage'
+import CaissePage     from './pages/CaissePage'
+import DashboardPage  from './pages/DashboardPage'
+import SettingsPage   from './pages/SettingsPage'
+import TitleBar       from './components/layout/TitleBar'
+import Sidebar        from './components/layout/Sidebar'
 
 export type Page = 'caisse' | 'dashboard' | 'settings'
 
 const pageVariants = {
-  initial: { opacity: 0, y: 6 },
-  animate: { opacity: 1, y: 0 },
+  initial: { opacity: 0, y: 6  },
+  animate: { opacity: 1, y: 0  },
   exit:    { opacity: 0, y: -4 },
 }
 
@@ -27,7 +27,6 @@ function initTheme() {
   } else if (saved === 'light') {
     root.classList.remove('dark')
   } else {
-    // system
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     root.classList.toggle('dark', prefersDark)
   }
@@ -36,8 +35,8 @@ function initTheme() {
 initTheme()
 
 export default function App() {
-  const { user } = useAuthStore()
-  const { activated, setActivated } = useLicenseStore()
+  const { user }       = useAuthStore()
+  const { activated, trial, expired, setStatus } = useLicenseStore()
   const [loading, setLoading] = useState(true)
   const [page, setPage]       = useState<Page>('caisse')
 
@@ -45,15 +44,23 @@ export default function App() {
     const init = async () => {
       try {
         const s = await window.playdesk.license.status()
-        setActivated(s.activated)
+        setStatus({
+          activated:   s.activated,
+          trial:       s.trial       ?? false,
+          expired:     s.expired     ?? false,
+          daysLeft:    s.daysLeft    ?? 0,
+          trialEndsAt: s.trialEndsAt ?? undefined,
+        })
       } catch {
-        setActivated(false)
+        // Dev / error fallback — let through
+        setStatus({ activated: true })
       }
       setLoading(false)
     }
     init()
   }, [])
 
+  // ── Loading spinner ──────────────────────────────────────────────────────────
   if (loading) return (
     <div
       className="h-screen flex items-center justify-center"
@@ -61,17 +68,35 @@ export default function App() {
     >
       <div
         className="w-6 h-6 border-2 rounded-full animate-spin"
-        style={{
-          borderColor: 'var(--border)',
-          borderTopColor: 'var(--neon)',
-        }}
+        style={{ borderColor: 'var(--border)', borderTopColor: 'var(--neon)' }}
       />
     </div>
   )
 
-  if (!activated) return <ActivationPage />
-  if (!user)      return <LoginPage />
+  // ── License gate ─────────────────────────────────────────────────────────────
+  // Block if: no activation AND (no trial started OR trial has expired)
+  const canUse = activated || (trial && !expired)
+  if (!canUse) return (
+    <ActivationPage
+      onActivated={() =>
+        // Re-fetch status after activation/trial start so the store updates
+        window.playdesk.license.status().then(s =>
+          setStatus({
+            activated:   s.activated,
+            trial:       s.trial       ?? false,
+            expired:     s.expired     ?? false,
+            daysLeft:    s.daysLeft    ?? 0,
+            trialEndsAt: s.trialEndsAt ?? undefined,
+          })
+        )
+      }
+    />
+  )
 
+  // ── Auth gate ────────────────────────────────────────────────────────────────
+  if (!user) return <LoginPage />
+
+  // ── Main app ─────────────────────────────────────────────────────────────────
   return (
     <div
       className="h-screen flex flex-col overflow-hidden"
@@ -91,9 +116,9 @@ export default function App() {
               transition={{ duration: 0.18, ease: 'easeOut' }}
               className="h-full"
             >
-              {page === 'caisse'                             && <CaissePage />}
-              {page === 'dashboard' && user.role === 'admin' && <DashboardPage />}
-              {page === 'settings'  && user.role === 'admin' && <SettingsPage />}
+              {page === 'caisse'                              && <CaissePage />}
+              {page === 'dashboard' && user.role === 'admin'  && <DashboardPage />}
+              {page === 'settings'  && user.role === 'admin'  && <SettingsPage />}
             </motion.div>
           </AnimatePresence>
         </main>

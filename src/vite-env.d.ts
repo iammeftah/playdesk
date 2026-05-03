@@ -5,7 +5,7 @@ interface Window {
     window: {
       minimize: () => void
       maximize: () => void
-      close: () => void
+      close:    () => void
     }
     auth: {
       login:   (username: string, password: string) => Promise<{ success: boolean; user?: any; error?: string }>
@@ -13,8 +13,16 @@ interface Window {
       current: () => Promise<any>
     }
     license: {
-      status:   () => Promise<{ activated: boolean; activatedAt?: string }>
-      activate: (key: string) => Promise<{ success: boolean; error?: string }>
+      status:     () => Promise<{
+        activated:    boolean
+        activatedAt?: string
+        trial?:       boolean
+        expired?:     boolean
+        trialEndsAt?: number
+        daysLeft?:    number
+      }>
+      activate:   (key: string) => Promise<{ success: boolean; error?: string }>
+      startTrial: () => Promise<{ success: boolean; error?: string }>
     }
     stations: {
       list:   () => Promise<any[]>
