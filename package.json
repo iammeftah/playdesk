@@ -1,83 +1,117 @@
 {
   "name": "playdesk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Système de gestion de salle de jeux",
+  "author": "PlayDesk",
   "main": "dist-electron/main/index.js",
+
   "scripts": {
-    "dev": "concurrently -k \"vite\" \"npm run electron:dev\"",
+    "dev":          "concurrently -k \"vite\" \"npm run electron:dev\"",
     "electron:dev": "wait-on tcp:5173 && tsc -p tsconfig.electron.json && mkdir -p dist-electron/licensing && cp electron/licensing/keys_embedded.js dist-electron/licensing/keys_embedded.js && electron . --no-sandbox",
-    "build": "tsc -p tsconfig.json && vite build && tsc -p tsconfig.electron.json && mkdir -p dist-electron/licensing && cp electron/licensing/keys_embedded.js dist-electron/licensing/keys_embedded.js",
-    "dist:win": "npm run build && electron-builder --win",
-    "typecheck": "tsc --noEmit",
+    "build":        "tsc -p tsconfig.json && vite build && tsc -p tsconfig.electron.json && mkdir -p dist-electron/licensing && cp electron/licensing/keys_embedded.js dist-electron/licensing/keys_embedded.js",
+    "dist:win":     "npm run build && electron-builder --win",
+    "postinstall":  "electron-builder install-app-deps",
+    "typecheck":    "tsc --noEmit",
     "keys:generate": "node tools/key-generator/keygen.js generate",
-    "keys:list": "node tools/key-generator/keygen.js list",
-    "keys:reset": "node tools/key-generator/keygen.js reset"
+    "keys:list":     "node tools/key-generator/keygen.js list",
+    "keys:reset":    "node tools/key-generator/keygen.js reset"
   },
+
   "dependencies": {
-    "@fontsource-variable/geist": "^5.2.8",
+    "@fontsource-variable/geist":  "^5.2.8",
     "@radix-ui/react-alert-dialog": "^1.1.15",
-    "@radix-ui/react-avatar": "^1.1.11",
-    "@radix-ui/react-dialog": "^1.1.15",
-    "@radix-ui/react-dropdown-menu": "^2.1.16",
-    "@radix-ui/react-label": "^2.1.8",
-    "@radix-ui/react-select": "^2.2.6",
-    "@radix-ui/react-separator": "^1.1.8",
-    "@radix-ui/react-slot": "^1.2.4",
-    "@radix-ui/react-switch": "^1.2.6",
-    "@radix-ui/react-tabs": "^1.1.13",
-    "@radix-ui/react-tooltip": "^1.2.8",
-    "@tailwindcss/vite": "^4.2.4",
-    "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^9.4.3",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "drizzle-orm": "^0.30.4",
-    "framer-motion": "^12.38.0",
-    "lucide-react": "^1.14.0",
-    "node-machine-id": "^1.1.12",
-    "ogl": "^1.0.11",
-    "radix-ui": "^1.4.3",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "recharts": "^2.12.2",
-    "shadcn": "^4.6.0",
-    "tailwind-merge": "^3.5.0",
-    "tailwindcss": "^4.2.4",
-    "three": "^0.167.1",
-    "tw-animate-css": "^1.4.0",
-    "zustand": "^4.5.2"
+    "@radix-ui/react-avatar":       "^1.1.11",
+    "@radix-ui/react-dialog":       "^1.1.15",
+    "@radix-ui/react-dropdown-menu":"^2.1.16",
+    "@radix-ui/react-label":        "^2.1.8",
+    "@radix-ui/react-select":       "^2.2.6",
+    "@radix-ui/react-separator":    "^1.1.8",
+    "@radix-ui/react-slot":         "^1.2.4",
+    "@radix-ui/react-switch":       "^1.2.6",
+    "@radix-ui/react-tabs":         "^1.1.13",
+    "@radix-ui/react-tooltip":      "^1.2.8",
+    "@tailwindcss/vite":            "^4.2.4",
+    "bcryptjs":                     "^2.4.3",
+    "better-sqlite3":               "^9.4.3",
+    "class-variance-authority":     "^0.7.1",
+    "clsx":                         "^2.1.1",
+    "drizzle-orm":                  "^0.45.2",
+    "framer-motion":                "^12.38.0",
+    "lucide-react":                 "^1.14.0",
+    "node-machine-id":              "^1.1.12",
+    "ogl":                          "^1.0.11",
+    "radix-ui":                     "^1.4.3",
+    "react":                        "^18.2.0",
+    "react-dom":                    "^18.2.0",
+    "recharts":                     "^2.12.2",
+    "shadcn":                       "^4.6.0",
+    "tailwind-merge":               "^3.5.0",
+    "tailwindcss":                  "^4.2.4",
+    "three":                        "^0.167.1",
+    "tw-animate-css":               "^1.4.0",
+    "zustand":                      "^4.5.2"
   },
+
   "devDependencies": {
-    "@electron/rebuild": "^3.7.2",
-    "@types/bcryptjs": "^2.4.6",
-    "@types/better-sqlite3": "^7.6.8",
-    "@types/node": "^20.11.5",
-    "@types/react": "^18.2.48",
-    "@types/react-dom": "^18.2.18",
+    "@electron/rebuild":    "^3.7.2",
+    "@types/bcryptjs":      "^2.4.6",
+    "@types/better-sqlite3":"^7.6.8",
+    "@types/node":          "^20.11.5",
+    "@types/react":         "^18.2.48",
+    "@types/react-dom":     "^18.2.18",
+    "@types/three":         "^0.184.0",
     "@vitejs/plugin-react": "^4.2.1",
-    "autoprefixer": "^10.5.0",
-    "concurrently": "^8.2.2",
-    "drizzle-kit": "^0.20.14",
-    "electron": "^29.1.0",
-    "electron-builder": "^24.9.1",
-    "postcss": "^8.4.33",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.12",
-    "wait-on": "^7.2.0"
+    "autoprefixer":         "^10.5.0",
+    "concurrently":         "^8.2.2",
+    "drizzle-kit":          "^0.20.14",
+    "electron":             "^29.1.0",
+    "electron-builder":     "^24.9.1",
+    "postcss":              "^8.4.33",
+    "typescript":           "^5.3.3",
+    "vite":                 "^5.0.12",
+    "wait-on":              "^7.2.0"
   },
+
   "build": {
-    "appId": "com.playdesk.app",
+    "appId":       "com.playdesk.app",
     "productName": "PlayDesk",
+    "copyright":   "Copyright © 2024 PlayDesk",
+
     "directories": {
       "output": "release"
     },
-    "win": {
-      "target": "nsis",
-      "icon": "resources/icon.ico"
-    },
+
     "files": [
       "dist/**/*",
       "dist-electron/**/*"
-    ]
+    ],
+
+    "extraResources": [
+      { "from": "resources/", "to": "resources/", "filter": ["**/*"] }
+    ],
+
+    "win": {
+      "target":         "nsis",
+      "icon":           "resources/icon.ico",
+      "publisherName":  "PlayDesk",
+      "legalTrademarks":"PlayDesk"
+    },
+
+    "nsis": {
+      "oneClick":                      false,
+      "allowElevation":                true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut":         true,
+      "createStartMenuShortcut":       true,
+      "runAfterFinish":                true,
+      "menuCategory":                  "PlayDesk",
+      "shortcutName":                  "PlayDesk",
+      "language":                      "1036",
+      "displayLanguageSelector":       false,
+      "installerIcon":                 "resources/icon.ico",
+      "uninstallerIcon":               "resources/icon.ico",
+      "installerHeaderIcon":           "resources/icon.ico",
+      "artifactName":                  "PlayDesk-Setup-${version}.exe"
+    }
   }
 }

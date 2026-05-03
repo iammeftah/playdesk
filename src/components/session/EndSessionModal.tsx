@@ -27,7 +27,7 @@ export default function EndSessionModal({ session, elapsed, amount, onClose, onE
     setLoading(true)
     const res = await window.playdesk.sessions.end(session.id, note || undefined)
     if (res.success) {
-      setConfirmedTotal(res.total)
+      setConfirmedTotal(res.total ?? null)
       onEnded()
       onClose()
     }

@@ -24,6 +24,7 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
     },
+    icon: path.join(__dirname, '../../resources/icon.ico'),
   })
 
   if (isDev) {
