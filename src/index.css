@@ -1,18 +1,422 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
 
-* { box-sizing: border-box; }
+@custom-variant dark (&:is(.dark *));
 
-body {
-  margin: 0;
-  background: #0d0f1c;
-  color: #f0f2f8;
-  font-family: 'Inter', system-ui, sans-serif;
-  overflow: hidden;
-  user-select: none;
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: 'Geist Variable', sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #141726; }
-::-webkit-scrollbar-thumb { background: #2456f6; border-radius: 3px; }
+/* ─── LIGHT MODE (DEFAULT) ──────────────────────────────────────────────── */
+:root {
+  --background:         #fafafa;      /* neutral-50 */
+  --foreground:         #0a0a0a;      /* neutral-950 */
+  --card:               #ffffff;
+  --card-foreground:    #0a0a0a;
+  --popover:            #ffffff;
+  --popover-foreground: #0a0a0a;
+
+  --primary:            #0a0a0a;
+  --primary-foreground: #fafafa;
+
+  --secondary:          #f5f5f5;      /* neutral-100 */
+  --secondary-foreground: #0a0a0a;
+
+  --muted:              #f5f5f5;
+  --muted-foreground:   #737373;      /* neutral-500 */
+
+  --accent:             #f5f5f5;
+  --accent-foreground:  #0a0a0a;
+
+  --destructive:        #ef4444;
+  --border:             #e5e5e5;      /* neutral-200 */
+  --input:              #f5f5f5;
+  --ring:               transparent;
+
+  /* Neon accent — indigo, works on both modes */
+  --neon:               #6366f1;      /* indigo-500 */
+  --neon-dim:           rgba(99, 102, 241, 0.08);
+  --neon-mid:           rgba(99, 102, 241, 0.15);
+  --neon-glow:          rgba(99, 102, 241, 0.06);
+
+  --radius: 0.625rem;
+
+  --sidebar:            #ffffff;
+  --sidebar-foreground: #0a0a0a;
+  --sidebar-primary:    #0a0a0a;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent:     #f5f5f5;
+  --sidebar-accent-foreground: #0a0a0a;
+  --sidebar-border:     #e5e5e5;
+  --sidebar-ring:       transparent;
+
+  --chart-1: #6366f1;
+  --chart-2: #818cf8;
+  --chart-3: #a5b4fc;
+  --chart-4: #4338ca;
+  --chart-5: #312e81;
+
+  /* Titlebar in light */
+  --titlebar-bg:        rgba(255, 255, 255, 0.92);
+  --titlebar-border:    #e5e5e5;
+}
+
+/* ─── DARK MODE ─────────────────────────────────────────────────────────── */
+.dark {
+  --background:         #0a0a0a;      /* neutral-950 */
+  --foreground:         #fafafa;      /* neutral-50 */
+  --card:               #141414;
+  --card-foreground:    #fafafa;
+  --popover:            #141414;
+  --popover-foreground: #fafafa;
+
+  --primary:            #e5e5e5;
+  --primary-foreground: #0a0a0a;
+
+  --secondary:          #1c1c1c;
+  --secondary-foreground: #fafafa;
+
+  --muted:              #1c1c1c;
+  --muted-foreground:   #737373;
+
+  --accent:             #1c1c1c;
+  --accent-foreground:  #fafafa;
+
+  --destructive:        #ef4444;
+  --border:             #2a2a2a;
+  --input:              #1c1c1c;
+  --ring:               transparent;
+
+  --neon:               #818cf8;      /* indigo-400 — brighter on dark */
+  --neon-dim:           rgba(129, 140, 248, 0.08);
+  --neon-mid:           rgba(129, 140, 248, 0.15);
+  --neon-glow:          rgba(129, 140, 248, 0.06);
+
+  --sidebar:            #0e0e0e;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary:    #e5e5e5;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent:     #1c1c1c;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border:     #1e1e1e;
+  --sidebar-ring:       transparent;
+
+  --titlebar-bg:        rgba(14, 14, 14, 0.92);
+  --titlebar-border:    #1e1e1e;
+}
+
+/* ─── BASE ─────────────────────────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after {
+    @apply border-border;
+    outline: none !important;
+    /* Smooth theme transitions */
+    transition-property: background-color, border-color, color;
+    transition-duration: 200ms;
+    transition-timing-function: ease;
+  }
+  /* But don't transition transforms/opacity on interactive elements */
+  button, a, [role="button"] {
+    transition-property: background-color, border-color, color, opacity, transform, box-shadow;
+  }
+
+  *:focus,
+  *:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  a:focus-visible {
+    box-shadow: 0 0 0 1.5px rgba(99, 102, 241, 0.5) !important;
+    outline: none !important;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    -webkit-app-region: no-drag;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html { @apply font-sans; }
+
+  ::-webkit-scrollbar       { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
+
+  input, input[type], textarea, select,
+  button, a, label,
+  [role="button"], [role="textbox"], [role="listbox"],
+  [role="option"], [role="dialog"], [role="combobox"], [tabindex] {
+    -webkit-app-region: no-drag;
+  }
+  input, input[type], textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  select {
+    background-color: var(--input);
+    border: 1px solid var(--border);
+    color: var(--foreground);
+  }
+  select option { background-color: var(--popover); }
+}
+
+/* ─── TITLEBAR DRAG ─────────────────────────────────────────────────────── */
+.titlebar-drag            { -webkit-app-region: drag; }
+.titlebar-drag *          { -webkit-app-region: no-drag; }
+.titlebar-drag-region     { -webkit-app-region: drag; }
+
+/* ─── SHADCN OVERRIDES ──────────────────────────────────────────────────── */
+
+[data-slot="card"] {
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+[data-slot="card"]:hover {
+  border-color: rgba(99, 102, 241, 0.2) !important;
+  box-shadow: 0 0 20px var(--neon-dim), 0 4px 24px rgba(0,0,0,0.06) !important;
+}
+.dark [data-slot="card"]:hover {
+  box-shadow: 0 0 24px rgba(129, 140, 248, 0.06), 0 8px 40px rgba(0,0,0,0.5) !important;
+}
+
+[data-slot="button"] {
+  transition: background 0.15s ease, opacity 0.15s ease, transform 0.1s ease !important;
+}
+[data-slot="button"]:active:not(:disabled) {
+  transform: translateY(1px) !important;
+}
+
+[data-slot="input"] {
+  background: var(--input) !important;
+  border-color: var(--border) !important;
+  transition: border-color 0.15s ease !important;
+}
+[data-slot="input"]:focus {
+  border-color: rgba(99, 102, 241, 0.5) !important;
+  box-shadow: none !important;
+}
+
+[data-slot="tabs-list"] {
+  background: var(--muted) !important;
+  border-radius: 10px !important;
+}
+[data-slot="tabs-trigger"][data-state="active"] {
+  background: var(--card) !important;
+  color: var(--foreground) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+}
+.dark [data-slot="tabs-trigger"][data-state="active"] {
+  background: #2a2a2a !important;
+  box-shadow: none !important;
+}
+
+[data-slot="alert-dialog-overlay"],
+[data-slot="dialog-overlay"] {
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
+}
+.dark [data-slot="alert-dialog-overlay"],
+.dark [data-slot="dialog-overlay"] {
+  background: rgba(0, 0, 0, 0.7) !important;
+}
+[data-slot="alert-dialog-content"],
+[data-slot="dialog-content"] {
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 0 0 1px rgba(99,102,241,0.06), 0 20px 60px rgba(0,0,0,0.15) !important;
+  border-radius: 14px !important;
+}
+.dark [data-slot="alert-dialog-content"],
+.dark [data-slot="dialog-content"] {
+  box-shadow: 0 0 0 1px rgba(129,140,248,0.08), 0 24px 64px rgba(0,0,0,0.8) !important;
+}
+
+/* ─── UTILITY CARD CLASSES ──────────────────────────────────────────────── */
+.glow-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.glow-card:hover {
+  border-color: rgba(99, 102, 241, 0.2);
+  box-shadow: 0 0 20px var(--neon-dim), 0 4px 20px rgba(0,0,0,0.06);
+}
+
+.glow-active {
+  border-color: rgba(74, 222, 128, 0.25) !important;
+  box-shadow: 0 0 20px rgba(74, 222, 128, 0.08) !important;
+}
+.dark .glow-active {
+  box-shadow: 0 0 20px rgba(74, 222, 128, 0.1), 0 4px 24px rgba(0,0,0,0.5) !important;
+}
+
+.glow-pause {
+  border-color: rgba(251, 191, 36, 0.25) !important;
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.08) !important;
+}
+
+.glow-expired {
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  animation: pulse-glow-red 2s ease-in-out infinite;
+}
+@keyframes pulse-glow-red {
+  0%,100% { box-shadow: 0 0 20px rgba(239,68,68,0.1), 0 4px 24px rgba(0,0,0,0.1); }
+  50%      { box-shadow: 0 0 36px rgba(239,68,68,0.22), 0 4px 32px rgba(0,0,0,0.15); }
+}
+.dark .glow-expired { animation: pulse-glow-red-dark 2s ease-in-out infinite; }
+@keyframes pulse-glow-red-dark {
+  0%,100% { box-shadow: 0 0 20px rgba(239,68,68,0.12), 0 4px 24px rgba(0,0,0,0.5); }
+  50%      { box-shadow: 0 0 36px rgba(239,68,68,0.28), 0 4px 32px rgba(0,0,0,0.6); }
+}
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.stat-card:hover {
+  border-color: rgba(99, 102, 241, 0.2);
+  box-shadow: 0 0 20px var(--neon-dim), 0 4px 20px rgba(0,0,0,0.06);
+}
+
+/* ─── NEON DOT ──────────────────────────────────────────────────────────── */
+.neon-dot {
+  width: 6px; height: 6px;
+  border-radius: 9999px;
+  background: #4ade80;
+  box-shadow: 0 0 6px rgba(74,222,128,0.7);
+  animation: neon-dot-pulse 2.5s ease-in-out infinite;
+}
+@keyframes neon-dot-pulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+/* ─── PROGRESS BAR ──────────────────────────────────────────────────────── */
+.progress-track {
+  height: 2px;
+  background: var(--border);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 1s linear;
+}
+
+/* ─── CALENDAR POPUP ────────────────────────────────────────────────────── */
+.cal-popup {
+  background: var(--popover);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px var(--neon-dim), 0 16px 48px rgba(0,0,0,0.12);
+  padding: 1rem;
+  min-width: 268px;
+  user-select: none;
+}
+.dark .cal-popup {
+  box-shadow: 0 0 0 1px rgba(129,140,248,0.08), 0 20px 60px rgba(0,0,0,0.8);
+}
+.cal-day {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.cal-day:hover         { background: var(--muted); color: var(--foreground); }
+.cal-day.today         { color: var(--neon); font-weight: 600; }
+.cal-day.selected      {
+  background: var(--neon-mid);
+  color: var(--neon);
+  font-weight: 600;
+}
+.cal-day.other-month   { opacity: 0.3; }
+.cal-day.disabled      { pointer-events: none; opacity: 0.2; }
+
+/* ─── SETTINGS INPUT / FIELD HELPERS ───────────────────────────────────── */
+.settings-input {
+  background: var(--input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  transition: border-color 0.15s ease;
+}
+.settings-input:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  outline: none;
+}
+
+/* ─── THEME SELECTOR (AppearanceSettings) ──────────────────────────────── */
+.theme-option {
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  overflow: hidden;
+}
+.theme-option:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+}
+.theme-option.selected {
+  border-color: var(--neon);
+  box-shadow: 0 0 0 1px var(--neon), 0 0 16px var(--neon-dim);
+}

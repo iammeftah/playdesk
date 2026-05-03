@@ -1,39 +1,95 @@
-import { useState } from 'react'
-import StationsSettings from '../components/settings/StationsSettings'
-import UsersSettings from '../components/settings/UsersSettings'
-import TarifsSettings from '../components/settings/TarifsSettings'
-import LicenseSettings from '../components/settings/LicenseSettings'
+import { motion } from 'framer-motion'
+import AppearanceSettings from '../components/settings/AppearanceSettings'
+import LicenseSettings    from '../components/settings/LicenseSettings'
+import StationsSettings   from '../components/settings/StationsSettings'
+import TarifsSettings     from '../components/settings/TarifsSettings'
+import UsersSettings      from '../components/settings/UsersSettings'
+import { Sun, Tv2, CircleDollarSign, Users, ShieldCheck } from 'lucide-react'
 
-type Tab = 'stations' | 'users' | 'tarifs' | 'license'
+const SectionHeader = ({ icon: Icon, title, sub }: { icon: React.ElementType; title: string; sub: string }) => (
+  <div className="flex items-center gap-2.5 mb-5 pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
+    <div
+      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+      style={{ background: 'var(--neon-dim)', border: '1px solid rgba(99,102,241,0.2)' }}
+    >
+      <Icon className="w-3.5 h-3.5" style={{ color: 'var(--neon)' }} />
+    </div>
+    <div>
+      <p className="text-sm font-semibold leading-none" style={{ color: 'var(--foreground)' }}>{title}</p>
+      <p className="text-[11px] mt-0.5" style={{ color: 'var(--muted-foreground)' }}>{sub}</p>
+    </div>
+  </div>
+)
+
+const Panel = ({ children }: { children: React.ReactNode }) => (
+  <div
+    className="rounded-xl p-5 w-full"
+    style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+  >
+    {children}
+  </div>
+)
 
 export default function SettingsPage() {
-  const [tab, setTab] = useState<Tab>('stations')
-
-  const tabs = [
-    { id: 'stations' as Tab, label: '🖥 Stations' },
-    { id: 'users'    as Tab, label: '👤 Utilisateurs' },
-    { id: 'tarifs'   as Tab, label: '💰 Tarifs' },
-    { id: 'license'  as Tab, label: '🔑 Licence' },
-  ]
-
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold text-white mb-6">Paramètres</h2>
+    <div
+      className="flex-1 overflow-auto p-6"
+      style={{ background: 'var(--background)', color: 'var(--foreground)' }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22 }}
+      >
+        {/* Page header */}
+        <div className="mb-6">
+          <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--foreground)' }}>
+            Paramètres
+          </h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--muted-foreground)' }}>
+            Configurez et personnalisez PlayDesk
+          </p>
+        </div>
 
-      <div className="flex gap-2 mb-6 border-b border-surface-800 pb-0">
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors -mb-px border-b-2
-              ${tab === t.id ? 'text-white border-brand-500 bg-surface-900' : 'text-surface-400 border-transparent hover:text-white'}`}>
-            {t.label}
-          </button>
-        ))}
-      </div>
+        {/* 2-col grid — fills all available width */}
+        <div className="grid grid-cols-2 gap-5">
 
-      {tab === 'stations' && <StationsSettings />}
-      {tab === 'users'    && <UsersSettings />}
-      {tab === 'tarifs'   && <TarifsSettings />}
-      {tab === 'license'  && <LicenseSettings />}
+          {/* ── Left column ── */}
+          <div className="flex flex-col gap-5">
+
+            <Panel>
+              <SectionHeader icon={Sun} title="Apparence" sub="Thème de l'interface" />
+              <AppearanceSettings />
+            </Panel>
+
+            <Panel>
+              <SectionHeader icon={CircleDollarSign} title="Tarifs" sub="Prix par type de session" />
+              <TarifsSettings />
+            </Panel>
+
+          </div>
+
+          {/* ── Right column ── */}
+          <div className="flex flex-col gap-5">
+
+            <Panel>
+              <SectionHeader icon={Tv2} title="Stations" sub="Gestion des postes de jeu" />
+              <StationsSettings />
+            </Panel>
+
+            <Panel>
+              <SectionHeader icon={Users} title="Utilisateurs" sub="Comptes et accès" />
+              <UsersSettings />
+            </Panel>
+
+            <Panel>
+              <SectionHeader icon={ShieldCheck} title="Licence" sub="Activation et validité" />
+              <LicenseSettings />
+            </Panel>
+
+          </div>
+        </div>
+      </motion.div>
     </div>
   )
 }

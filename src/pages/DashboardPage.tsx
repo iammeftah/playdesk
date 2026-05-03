@@ -1,22 +1,45 @@
 import { useEffect, useState } from 'react'
-import { todayISO, formatMAD } from '../lib/utils'
+import { motion } from 'framer-motion'
+import { RefreshCw } from 'lucide-react'
+import { todayISO } from '../lib/utils'
 import RevenueChart from '../components/dashboard/RevenueChart'
 import StationUtilization from '../components/dashboard/StationUtilization'
 import PeakHoursHeatmap from '../components/dashboard/PeakHoursHeatmap'
 import SessionHistory from '../components/dashboard/SessionHistory'
 import SummaryCards from '../components/dashboard/SummaryCards'
+import DatePicker from '../components/common/DatePicker'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
 type Period = 'day' | 'week' | 'month'
 
+const PERIOD_LABELS: Record<Period, string> = {
+  day:   'Jour',
+  week:  'Semaine',
+  month: 'Mois',
+}
+
+const Skeleton = () => (
+  <div className="h-40 flex items-center justify-center">
+    <div className="w-5 h-5 border-2 border-white/8 border-t-white/40 rounded-full animate-spin" />
+  </div>
+)
+
+const fadeUp = (delay = 0) => ({
+  initial:    { opacity: 0, y: 10 },
+  animate:    { opacity: 1, y: 0 },
+  transition: { duration: 0.24, ease: 'easeOut' as const, delay },
+})
+
 export default function DashboardPage() {
-  const [summary, setSummary]       = useState<any>(null)
-  const [revenue, setRevenue]       = useState<any[]>([])
-  const [stationStats, setStation]  = useState<any[]>([])
-  const [peakHours, setPeakHours]   = useState<any[]>([])
-  const [history, setHistory]       = useState<any[]>([])
-  const [period, setPeriod]         = useState<Period>('day')
-  const [loading, setLoading]       = useState(true)
-  const [date, setDate]             = useState(todayISO())
+  const [summary, setSummary]      = useState<any>(null)
+  const [revenue, setRevenue]      = useState<any[]>([])
+  const [stationStats, setStation] = useState<any[]>([])
+  const [peakHours, setPeakHours]  = useState<any[]>([])
+  const [history, setHistory]      = useState<any[]>([])
+  const [period, setPeriod]        = useState<Period>('day')
+  const [loading, setLoading]      = useState(true)
+  const [date, setDate]            = useState(todayISO())
 
   const load = async () => {
     setLoading(true)
@@ -28,69 +51,114 @@ export default function DashboardPage() {
         window.playdesk.dashboard.peakHours(),
         window.playdesk.sessions.history({}),
       ])
-      setSummary(sum); setRevenue(rev); setStation(stat)
-      setPeakHours(peak); setHistory(hist)
-    } catch(e) { console.error(e) }
+      setSummary(sum)
+      setRevenue(rev)
+      setStation(stat)
+      setPeakHours(peak)
+      setHistory(hist)
+    } catch (e) { console.error(e) }
     setLoading(false)
   }
 
   useEffect(() => { load() }, [date, period])
 
   return (
-    <div className="p-6 flex flex-col gap-6">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      className="p-7 flex flex-col gap-6 overflow-auto"
+    >
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-white">Tableau de bord</h2>
-        <div className="flex items-center gap-3">
-          <input type="date" value={date} onChange={e => setDate(e.target.value)}
-            className="bg-surface-800 border border-surface-700 rounded-lg px-3 py-1.5 text-white text-sm outline-none focus:border-brand-500" />
-          <button onClick={load}
-            className="px-3 py-1.5 text-sm bg-surface-800 border border-surface-700 rounded-lg text-surface-300 hover:text-white transition-colors">
-            ↻
-          </button>
+        <div>
+          <h2 className="text-lg font-semibold text-foreground tracking-tight">
+            Tableau de bord
+          </h2>
+          <p className="text-[11px] text-muted-foreground mt-0.5 tracking-wide">
+            Vue d'ensemble des sessions et revenus
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <DatePicker value={date} onChange={setDate} />
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={load}
+            className="text-muted-foreground hover:text-white"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      {summary && <SummaryCards data={summary} />}
+      {/* Summary cards */}
+      {summary && (
+        <motion.div {...fadeUp(0.04)}>
+          <SummaryCards data={summary} />
+        </motion.div>
+      )}
 
-      {/* Revenue Chart */}
-      <div className="bg-surface-900 border border-surface-800 rounded-xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-white font-semibold">Revenus</h3>
-          <div className="flex gap-1">
-            {(['day','week','month'] as Period[]).map(p => (
-              <button key={p} onClick={() => setPeriod(p)}
-                className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors
-                  ${period === p ? 'bg-brand-600 text-white' : 'bg-surface-800 text-surface-400 hover:text-white'}`}>
-                {p === 'day' ? 'Jour' : p === 'week' ? 'Semaine' : 'Mois'}
-              </button>
-            ))}
-          </div>
-        </div>
-        {loading ? <div className="h-48 flex items-center justify-center text-surface-500 animate-pulse">Chargement...</div>
-          : <RevenueChart data={revenue} period={period} />}
-      </div>
+      {/* Revenue chart */}
+      <motion.div {...fadeUp(0.08)}>
+        <Card>
+          <CardHeader className="flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-foreground">Revenus</CardTitle>
+            {/* Period selector */}
+            <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
+              {(Object.keys(PERIOD_LABELS) as Period[]).map(p => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={
+                    period === p
+                      ? 'px-3 py-1 text-xs font-medium rounded-md bg-zinc-700 text-white transition-all'
+                      : 'px-3 py-1 text-xs font-medium rounded-md text-muted-foreground hover:text-white transition-all'
+                  }
+                >
+                  {PERIOD_LABELS[p]}
+                </button>
+              ))}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading ? <Skeleton /> : <RevenueChart data={revenue} period={period} />}
+          </CardContent>
+        </Card>
+      </motion.div>
 
-      {/* Station + Peak Hours */}
-      <div className="grid grid-cols-2 gap-5">
-        <div className="bg-surface-900 border border-surface-800 rounded-xl p-5">
-          <h3 className="text-white font-semibold mb-4">Utilisation stations</h3>
-          {loading ? <div className="h-32 flex items-center justify-center text-surface-500 animate-pulse">Chargement...</div>
-            : <StationUtilization data={stationStats} />}
-        </div>
-        <div className="bg-surface-900 border border-surface-800 rounded-xl p-5">
-          <h3 className="text-white font-semibold mb-4">Heures de pointe</h3>
-          {loading ? <div className="h-32 flex items-center justify-center text-surface-500 animate-pulse">Chargement...</div>
-            : <PeakHoursHeatmap data={peakHours} />}
-        </div>
-      </div>
+      {/* 2-col row */}
+      <motion.div {...fadeUp(0.12)} className="grid grid-cols-2 gap-5">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium text-foreground">Utilisation stations</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? <Skeleton /> : <StationUtilization data={stationStats} />}
+          </CardContent>
+        </Card>
 
-      {/* History */}
-      <div className="bg-surface-900 border border-surface-800 rounded-xl p-5">
-        <h3 className="text-white font-semibold mb-4">Historique des sessions</h3>
-        <SessionHistory data={history} />
-      </div>
-    </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium text-foreground">Heures de pointe</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? <Skeleton /> : <PeakHoursHeatmap data={peakHours} />}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Session history */}
+      <motion.div {...fadeUp(0.16)}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium text-foreground">Historique des sessions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SessionHistory data={history} />
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
   )
 }

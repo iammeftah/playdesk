@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Plus, Pencil, Power, Trash2, Check, X } from 'lucide-react'
 
 export default function StationsSettings() {
   const [stations, setStations] = useState<any[]>([])
@@ -7,11 +8,7 @@ export default function StationsSettings() {
   const [editName, setEditName] = useState('')
   const [loading, setLoading]   = useState(false)
 
-  const load = async () => {
-    const all = await window.playdesk.stations.list()
-    setStations(all)
-  }
-
+  const load = async () => { setStations(await window.playdesk.stations.list()) }
   useEffect(() => { load() }, [])
 
   const handleAdd = async () => {
@@ -43,59 +40,163 @@ export default function StationsSettings() {
 
   return (
     <div className="max-w-2xl">
-      <p className="text-surface-400 text-sm mb-5">Gérez vos stations PS5. Les stations désactivées n'apparaissent pas en Caisse.</p>
+      <p className="text-sm mb-6" style={{ color: 'var(--muted-foreground)' }}>
+        Gérez vos stations PS5. Les stations désactivées n'apparaissent pas en Caisse.
+      </p>
 
-      {/* Add new */}
+      {/* Add form */}
       <div className="flex gap-3 mb-6">
-        <input value={newName} onChange={e => setNewName(e.target.value)}
+        <input
+          value={newName}
+          onChange={e => setNewName(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleAdd()}
           placeholder="Nom de la station (ex: PS5-5)"
-          className="flex-1 bg-surface-800 border border-surface-700 rounded-lg px-4 py-2.5 text-white text-sm outline-none focus:border-brand-500" />
-        <button onClick={handleAdd} disabled={loading || !newName.trim()}
-          className="px-5 py-2.5 bg-brand-600 hover:bg-brand-500 disabled:opacity-50 text-white font-semibold text-sm rounded-lg transition-colors">
-          + Ajouter
+          className="settings-input flex-1"
+        />
+        <button
+          onClick={handleAdd}
+          disabled={loading || !newName.trim()}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-40"
+          style={{
+            background: 'var(--primary)',
+            color: 'var(--primary-foreground)',
+          }}
+        >
+          <Plus className="w-4 h-4" />
+          Ajouter
         </button>
       </div>
 
-      {/* List */}
+      {/* Station list */}
       <div className="flex flex-col gap-2">
         {stations.map(s => (
-          <div key={s.id} className={`flex items-center gap-3 bg-surface-900 border rounded-xl px-4 py-3 transition-all
-            ${s.active ? 'border-surface-800' : 'border-surface-800 opacity-50'}`}>
-            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${s.active ? 'bg-green-500' : 'bg-surface-600'}`} />
+          <div
+            key={s.id}
+            className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all"
+            style={{
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              opacity: s.active ? 1 : 0.5,
+            }}
+          >
+            {/* Status dot */}
+            <div
+              className="w-2.5 h-2.5 rounded-full shrink-0"
+              style={{
+                background: s.active ? '#4ade80' : 'var(--muted-foreground)',
+                boxShadow: s.active ? '0 0 6px rgba(74,222,128,0.6)' : 'none',
+                opacity: s.active ? 1 : 0.4,
+              }}
+            />
 
+            {/* Name / edit input */}
             {editId === s.id ? (
-              <input value={editName} onChange={e => setEditName(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleRename(s.id); if (e.key === 'Escape') setEditId(null) }}
-                className="flex-1 bg-surface-800 border border-brand-500 rounded-lg px-3 py-1 text-white text-sm outline-none"
-                autoFocus />
+              <input
+                value={editName}
+                onChange={e => setEditName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter')  handleRename(s.id)
+                  if (e.key === 'Escape') setEditId(null)
+                }}
+                className="settings-input flex-1 py-1 text-sm"
+                style={{ borderColor: 'var(--neon)' }}
+                autoFocus
+              />
             ) : (
-              <span className="flex-1 text-white font-medium text-sm">{s.name}</span>
+              <span
+                className="flex-1 text-sm font-medium"
+                style={{ color: 'var(--foreground)' }}
+              >
+                {s.name}
+              </span>
             )}
 
-            <div className="flex gap-2 text-xs">
+            {/* Actions */}
+            <div className="flex gap-1">
               {editId === s.id ? (
                 <>
-                  <button onClick={() => handleRename(s.id)} className="text-green-400 hover:text-green-300 font-medium px-2 py-1">✓ Sauver</button>
-                  <button onClick={() => setEditId(null)} className="text-surface-400 hover:text-white px-2 py-1">✕</button>
+                  <button
+                    onClick={() => handleRename(s.id)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                    style={{ color: '#4ade80', background: 'rgba(74,222,128,0.08)' }}
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setEditId(null)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                    style={{ color: 'var(--muted-foreground)', background: 'var(--muted)' }}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </>
               ) : (
                 <>
-                  <button onClick={() => { setEditId(s.id); setEditName(s.name) }}
-                    className="text-surface-400 hover:text-white px-2 py-1 rounded hover:bg-surface-800 transition-colors">
-                    ✏ Renommer
+                  <button
+                    onClick={() => { setEditId(s.id); setEditName(s.name) }}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                    title="Renommer"
+                    style={{ color: 'var(--muted-foreground)', background: 'transparent' }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.color = 'var(--foreground)'
+                      e.currentTarget.style.background = 'var(--muted)'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.color = 'var(--muted-foreground)'
+                      e.currentTarget.style.background = 'transparent'
+                    }}
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => handleToggle(s.id, s.active)}
-                    className={`px-2 py-1 rounded transition-colors ${s.active ? 'text-yellow-400 hover:bg-surface-800' : 'text-green-400 hover:bg-surface-800'}`}>
-                    {s.active ? '⏸ Désactiver' : '▶ Activer'}
+                  <button
+                    onClick={() => handleToggle(s.id, s.active)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                    title={s.active ? 'Désactiver' : 'Activer'}
+                    style={{
+                      color: s.active ? '#fbbf24' : '#4ade80',
+                      background: 'transparent',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = 'var(--muted)'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = 'transparent'
+                    }}
+                  >
+                    <Power className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(s.id)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                    title="Supprimer"
+                    style={{ color: 'var(--muted-foreground)', background: 'transparent' }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.color = '#ef4444'
+                      e.currentTarget.style.background = 'rgba(239,68,68,0.08)'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.color = 'var(--muted-foreground)'
+                      e.currentTarget.style.background = 'transparent'
+                    }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </>
               )}
             </div>
           </div>
         ))}
+
         {stations.length === 0 && (
-          <div className="text-center py-10 text-surface-500 text-sm">Aucune station configurée</div>
+          <div
+            className="text-center py-12 rounded-xl text-sm"
+            style={{
+              color: 'var(--muted-foreground)',
+              border: '1px dashed var(--border)',
+            }}
+          >
+            Aucune station configurée
+          </div>
         )}
       </div>
     </div>

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Session } from '../../types'
 import { formatTime, formatMAD } from '../../lib/utils'
+import { X, CheckCircle } from 'lucide-react'
+import { Button } from '../ui/button'
 
 interface Props {
   session: Session
@@ -10,9 +12,15 @@ interface Props {
   onEnded: () => void
 }
 
+const TYPE_LABELS: Record<string, string> = {
+  match: 'Match',
+  temps: 'Temps prépayé',
+  libre: 'Jeu Libre',
+}
+
 export default function EndSessionModal({ session, elapsed, amount, onClose, onEnded }: Props) {
-  const [note, setNote] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [note, setNote]                     = useState('')
+  const [loading, setLoading]               = useState(false)
   const [confirmedTotal, setConfirmedTotal] = useState<number | null>(null)
 
   const handleConfirm = async () => {
@@ -28,80 +36,62 @@ export default function EndSessionModal({ session, elapsed, amount, onClose, onE
 
   const displayAmount = confirmedTotal ?? amount
 
-  const typeLabels = {
-    match: 'Match',
-    temps: 'Temps prépayé',
-    libre: 'Jeu Libre',
-  }
-
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-surface-900 border border-surface-700 rounded-2xl p-6 w-[400px]" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-white font-bold text-lg">Terminer la session</h3>
-          <button onClick={onClose} className="text-surface-400 hover:text-white text-xl">✕</button>
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="bg-card border border-border rounded-xl w-[400px] shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <div>
+            <h3 className="font-sans text-base font-bold text-foreground uppercase tracking-widest">Terminer la session</h3>
+            <p className="text-[10px] text-muted-foreground tracking-widest mt-0.5">{session.station_name ?? `Station ${session.station_id}`}</p>
+          </div>
+          <button onClick={onClose} className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
-        {/* Summary */}
-        <div className="bg-surface-800 rounded-xl p-4 mb-4 flex flex-col gap-2.5">
-          <div className="flex justify-between text-sm">
-            <span className="text-surface-400">Station</span>
-            <span className="text-white font-medium">{session.station_name ?? `Station ${session.station_id}`}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-surface-400">Type</span>
-            <span className="text-white">{typeLabels[session.type]}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-surface-400">Durée active</span>
-            <span className="text-white font-mono">{formatTime(elapsed)}</span>
-          </div>
-
-          {session.type === 'match' && (
-            <>
-              <div className="flex justify-between text-sm">
-                <span className="text-surface-400">Matchs joués</span>
-                <span className="text-white">{session.match_count}</span>
+        <div className="p-5 flex flex-col gap-4">
+          <div className="bg-background border border-border rounded-lg overflow-hidden">
+            {[
+              { label: 'Type',         value: TYPE_LABELS[session.type] },
+              { label: 'Durée active', value: formatTime(elapsed), mono: true },
+              ...(session.type === 'match' ? [
+                { label: 'Matchs joués', value: String(session.match_count) },
+                { label: 'Durée/match',  value: session.match_duration === 8 ? '8+ min' : `${session.match_duration} min` },
+              ] : []),
+              ...(session.type === 'temps' ? [
+                { label: 'Durée prépayée', value: `${session.prepaid_minutes} min` },
+              ] : []),
+            ].map(({ label, value, mono }, i) => (
+              <div key={i} className="flex justify-between items-center px-4 py-2.5 border-b border-border last:border-0">
+                <span className="text-xs text-muted-foreground">{label}</span>
+                <span className={`text-xs text-foreground font-medium ${mono ? 'font-mono' : ''}`}>{value}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-surface-400">Durée/match</span>
-                <span className="text-white">{session.match_duration === 8 ? '8+ min' : `${session.match_duration} min`}</span>
-              </div>
-            </>
-          )}
+            ))}
 
-          {session.type === 'temps' && (
-            <div className="flex justify-between text-sm">
-              <span className="text-surface-400">Durée prépayée</span>
-              <span className="text-white">{session.prepaid_minutes} min</span>
+            <div className="flex justify-between items-center px-4 py-3 bg-card border-t border-border">
+              <span className="text-sm font-semibold text-foreground">Total à encaisser</span>
+              <span className="text-primary font-bold text-2xl font-mono">{formatMAD(displayAmount)}</span>
             </div>
-          )}
-
-          <div className="border-t border-surface-700 pt-3 mt-1 flex justify-between items-center">
-            <span className="text-white font-semibold">Total à encaisser</span>
-            <span className="text-brand-400 font-bold text-2xl">{formatMAD(displayAmount)}</span>
           </div>
-        </div>
 
-        {/* Note */}
-        <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Note optionnelle (incident, remise, info...)"
-          className="w-full bg-surface-800 border border-surface-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-brand-500 resize-none mb-4"
-          rows={2}
-        />
+          <textarea
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            placeholder="Note optionnelle (incident, remise...)"
+            className="w-full bg-muted border border-border focus:border-primary rounded-lg px-3 py-2.5 text-foreground text-sm outline-none resize-none transition-colors placeholder:text-muted-foreground"
+            rows={2}
+          />
 
-        {/* Buttons */}
-        <div className="flex gap-3">
-          <button onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg bg-surface-800 text-surface-300 hover:text-white text-sm font-medium">
-            Annuler
-          </button>
-          <button onClick={handleConfirm} disabled={loading}
-            className="flex-1 py-2.5 rounded-lg bg-green-700 hover:bg-green-600 text-white font-bold text-sm disabled:opacity-50 transition-colors">
-            {loading ? 'Enregistrement...' : `✓ Encaisser ${formatMAD(displayAmount)}`}
-          </button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose} className="flex-1">Annuler</Button>
+            <Button onClick={handleConfirm} disabled={loading} className="flex-1 bg-green-500 hover:bg-green-600 text-white flex items-center justify-center gap-2">
+              <CheckCircle className="w-3.5 h-3.5" />
+              {loading ? 'Enregistrement...' : `Encaisser ${formatMAD(displayAmount)}`}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

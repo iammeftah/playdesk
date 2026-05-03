@@ -1,25 +1,37 @@
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { formatMAD } from '../../lib/utils'
 
-const COLORS = ['#2456f6','#22c55e','#eab308','#a855f7','#ef4444','#06b6d4']
-
 export default function StationUtilization({ data }: { data: any[] }) {
-  if (!data.length) return <div className="h-32 flex items-center justify-center text-surface-500 text-sm">Aucune donnée</div>
+  if (!data.length) return (
+    <div className="h-32 flex items-center justify-center text-sm" style={{ color: 'var(--muted-foreground)' }}>
+      Aucune donnée
+    </div>
+  )
+
+  const maxRevenue = Math.max(...data.map(d => d.revenue), 1)
 
   return (
     <div className="flex flex-col gap-3">
       {data.map((s, i) => {
-        const max = Math.max(...data.map(d => d.revenue), 1)
-        const pct = Math.round((s.revenue / max) * 100)
+        const pct     = Math.round((s.revenue / maxRevenue) * 100)
+        // Vary opacity so bars feel distinct but all stay on-brand
+        const opacity = 0.5 + (1 - i / data.length) * 0.5
         return (
           <div key={s.name}>
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-surface-300 font-medium">{s.name}</span>
-              <span className="text-surface-400">{s.sessions} sessions · {formatMAD(s.revenue)}</span>
+            <div className="flex justify-between text-xs mb-1.5">
+              <span className="font-medium" style={{ color: 'var(--foreground)' }}>{s.name}</span>
+              <span style={{ color: 'var(--muted-foreground)' }}>
+                {s.sessions} session{s.sessions !== 1 ? 's' : ''} · {formatMAD(s.revenue)}
+              </span>
             </div>
-            <div className="h-2 bg-surface-800 rounded-full overflow-hidden">
-              <div className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${pct}%`, background: COLORS[i % COLORS.length] }} />
+            <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--muted)' }}>
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width:      `${pct}%`,
+                  background: 'var(--neon)',
+                  opacity,
+                }}
+              />
             </div>
           </div>
         )

@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { Station } from '../../types'
 import { calcMatchPrice } from '../../lib/pricing'
+import { X, Gamepad2, Clock, Infinity } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 interface Props {
   station: Station
@@ -10,26 +13,27 @@ interface Props {
 }
 
 const PRESET_DURATIONS = [
-  { minutes: 30, label: '30 min', price: 15 },
-  { minutes: 60, label: '1 heure', price: 30 },
-  { minutes: 120, label: '2 heures', price: 60 },
+  { minutes: 30,  label: '30 min', price: 15 },
+  { minutes: 60,  label: '1 h',    price: 30 },
+  { minutes: 120, label: '2 h',    price: 60 },
 ]
 
+const SESSION_TYPES = [
+  { id: 'match', label: 'Match',  Icon: Gamepad2 },
+  { id: 'temps', label: 'Temps',  Icon: Clock },
+  { id: 'libre', label: 'Libre',  Icon: Infinity },
+] as const
+
 export default function StartSessionModal({ station, managerId, onClose, onStarted }: Props) {
-  const [type, setType] = useState<'match' | 'temps' | 'libre'>('match')
-  const [matchDuration, setMatchDuration] = useState(8)
+  const [type, setType]                     = useState<'match' | 'temps' | 'libre'>('match')
+  const [matchDuration, setMatchDuration]   = useState(8)
   const [prepaidMinutes, setPrepaidMinutes] = useState(60)
-  const [customMinutes, setCustomMinutes] = useState('')
-  const [useCustom, setUseCustom] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [customMinutes, setCustomMinutes]   = useState('')
+  const [useCustom, setUseCustom]           = useState(false)
+  const [loading, setLoading]               = useState(false)
 
-  const effectivePrepaidMinutes = useCustom
-    ? parseInt(customMinutes) || 60
-    : prepaidMinutes
-
-  const customPrice = useCustom
-    ? ((parseInt(customMinutes) || 0) / 60 * 30).toFixed(2)
-    : null
+  const effectivePrepaidMinutes = useCustom ? parseInt(customMinutes) || 60 : prepaidMinutes
+  const customPrice = useCustom ? ((parseInt(customMinutes) || 0) / 60 * 30).toFixed(2) : null
 
   const handleStart = async () => {
     if (type === 'temps' && useCustom && (!customMinutes || parseInt(customMinutes) <= 0)) return
@@ -38,7 +42,7 @@ export default function StartSessionModal({ station, managerId, onClose, onStart
       stationId: station.id,
       managerId,
       type,
-      matchDuration: type === 'match' ? matchDuration : undefined,
+      matchDuration:  type === 'match' ? matchDuration : undefined,
       prepaidMinutes: type === 'temps' ? effectivePrepaidMinutes : undefined,
     })
     onStarted()
@@ -47,111 +51,141 @@ export default function StartSessionModal({ station, managerId, onClose, onStart
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-surface-900 border border-surface-700 rounded-2xl p-6 w-[420px] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-white font-bold text-lg">Démarrer — {station.name}</h3>
-          <button onClick={onClose} className="text-surface-400 hover:text-white text-xl">✕</button>
-        </div>
-
-        {/* Type selector */}
-        <div className="flex gap-2 mb-5">
-          {(['match', 'temps', 'libre'] as const).map((t) => (
-            <button key={t} onClick={() => setType(t)}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors
-                ${type === t ? 'bg-brand-600 text-white' : 'bg-surface-800 text-surface-400 hover:text-white'}`}>
-              {t === 'match' ? '🎮 Match' : t === 'temps' ? '⏱ Temps' : '∞ Libre'}
-            </button>
-          ))}
-        </div>
-
-        {/* Match options */}
-        {type === 'match' && (
-          <div className="mb-5">
-            <p className="text-surface-400 text-xs uppercase tracking-wider mb-3">Durée par match</p>
-            <div className="grid grid-cols-3 gap-2">
-              {([6, 7, 8] as const).map((d) => (
-                <button key={d} onClick={() => setMatchDuration(d)}
-                  className={`py-3 rounded-lg text-sm font-medium transition-colors text-center
-                    ${matchDuration === d ? 'bg-brand-600 text-white' : 'bg-surface-800 text-surface-400 hover:text-white'}`}>
-                  <div className="font-bold">{d === 8 ? '8+ min' : `${d} min`}</div>
-                  <div className="text-xs mt-0.5 opacity-75">{calcMatchPrice(d)} MAD</div>
-                </button>
-              ))}
-            </div>
-            <p className="text-surface-500 text-xs mt-3">
-              Total = nombre de matchs × {calcMatchPrice(matchDuration)} MAD
-            </p>
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="bg-card border border-border rounded-xl w-[400px] max-h-[90vh] overflow-y-auto shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <div>
+            <h3 className="font-sans text-base font-bold text-foreground uppercase tracking-widest">Démarrer</h3>
+            <p className="text-[10px] text-muted-foreground tracking-widest mt-0.5">{station.name}</p>
           </div>
-        )}
+          <button onClick={onClose} className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-        {/* Temps options */}
-        {type === 'temps' && (
-          <div className="mb-5">
-            <p className="text-surface-400 text-xs uppercase tracking-wider mb-3">Durée prépayée</p>
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              {PRESET_DURATIONS.map(({ minutes, label, price }) => (
-                <button key={minutes}
-                  onClick={() => { setPrepaidMinutes(minutes); setUseCustom(false) }}
-                  className={`py-3 rounded-lg text-sm font-medium transition-colors text-center
-                    ${!useCustom && prepaidMinutes === minutes ? 'bg-brand-600 text-white' : 'bg-surface-800 text-surface-400 hover:text-white'}`}>
-                  <div className="font-bold">{label}</div>
-                  <div className="text-xs mt-0.5 opacity-75">{price} MAD</div>
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => setUseCustom(true)}
-              className={`w-full py-2.5 rounded-lg text-sm font-medium transition-colors
-                ${useCustom ? 'bg-brand-600 text-white' : 'bg-surface-800 text-surface-400 hover:text-white'}`}>
-              Personnalisé
-            </button>
-            {useCustom && (
-              <div className="mt-3 flex items-center gap-3">
-                <input
-                  type="number"
-                  min="1"
-                  max="480"
-                  value={customMinutes}
-                  onChange={(e) => setCustomMinutes(e.target.value)}
-                  placeholder="Minutes"
-                  className="flex-1 bg-surface-800 border border-surface-600 rounded-lg px-3 py-2 text-white text-center font-mono outline-none focus:border-brand-500"
-                  autoFocus
-                />
-                <span className="text-surface-400 text-sm">min</span>
-                {customPrice && (
-                  <span className="text-brand-400 font-bold text-sm">{customPrice} MAD</span>
+        <div className="p-5 flex flex-col gap-4">
+          {/* Type selector */}
+          <div className="grid grid-cols-3 gap-1.5 bg-background rounded-lg p-1">
+            {SESSION_TYPES.map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                onClick={() => setType(id)}
+                className={cn(
+                  'flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-semibold tracking-wide transition-all',
+                  type === id
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
                 )}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Match options */}
+          {type === 'match' && (
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.18em] mb-2.5">Durée par match</p>
+              <div className="grid grid-cols-3 gap-2">
+                {([6, 7, 8] as const).map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setMatchDuration(d)}
+                    className={cn(
+                      'py-3 rounded-lg text-center border transition-all',
+                      matchDuration === d
+                        ? 'bg-primary/10 border-primary/40 text-foreground'
+                        : 'bg-muted border-border text-muted-foreground hover:border-border/80 hover:text-foreground'
+                    )}
+                  >
+                    <div className="font-sans font-bold text-sm tracking-wide">{d === 8 ? '8+ min' : `${d} min`}</div>
+                    <div className="text-[10px] mt-0.5 opacity-70 font-mono">{calcMatchPrice(d)} MAD</div>
+                  </button>
+                ))}
               </div>
-            )}
+              <p className="text-[10px] text-muted-foreground mt-2.5 tracking-wide">
+                Total = matchs × {calcMatchPrice(matchDuration)} MAD
+              </p>
+            </div>
+          )}
+
+          {/* Temps options */}
+          {type === 'temps' && (
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.18em] mb-2.5">Durée prépayée</p>
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                {PRESET_DURATIONS.map(({ minutes, label, price }) => (
+                  <button
+                    key={minutes}
+                    onClick={() => { setPrepaidMinutes(minutes); setUseCustom(false) }}
+                    className={cn(
+                      'py-3 rounded-lg text-center border transition-all',
+                      !useCustom && prepaidMinutes === minutes
+                        ? 'bg-primary/10 border-primary/40 text-foreground'
+                        : 'bg-muted border-border text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <div className="font-sans font-bold text-sm">{label}</div>
+                    <div className="text-[10px] mt-0.5 opacity-70 font-mono">{price} MAD</div>
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setUseCustom(true)}
+                className={cn(
+                  'w-full py-2 rounded-lg text-xs font-medium tracking-wide border transition-all',
+                  useCustom
+                    ? 'bg-primary/10 border-primary/40 text-foreground'
+                    : 'bg-muted border-border text-muted-foreground hover:text-foreground'
+                )}
+              >
+                Personnalisé
+              </button>
+              {useCustom && (
+                <div className="mt-2 flex items-center gap-2.5">
+                  <input
+                    type="number" min="1" max="480" value={customMinutes}
+                    onChange={e => setCustomMinutes(e.target.value)}
+                    placeholder="Minutes"
+                    className="flex-1 bg-muted border border-border focus:border-primary rounded-lg px-3 py-2 text-foreground text-center font-mono text-sm outline-none transition-colors"
+                    autoFocus
+                  />
+                  <span className="text-muted-foreground text-xs">min</span>
+                  {customPrice && <span className="text-primary font-bold text-sm font-mono">{customPrice} MAD</span>}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Libre info */}
+          {type === 'libre' && (
+            <div className="bg-muted/50 border border-border rounded-lg p-4">
+              <p className="text-foreground text-sm">Chronomètre ouvert — facturation à la minute.</p>
+              <p className="text-primary text-sm font-semibold font-mono mt-1.5">0.50 MAD / min · 30 MAD/h</p>
+            </div>
+          )}
+
+          {/* Summary */}
+          <div className="bg-background border border-border rounded-lg px-4 py-2.5 text-[11px] text-muted-foreground tracking-wide">
+            {type === 'match' && <span>Match · {matchDuration === 8 ? '8+ min' : `${matchDuration} min`} · {calcMatchPrice(matchDuration)} MAD/match</span>}
+            {type === 'temps' && <span>Temps prépayé · {effectivePrepaidMinutes} min · {(effectivePrepaidMinutes / 60 * 30).toFixed(2)} MAD</span>}
+            {type === 'libre' && <span>Jeu libre · facturation à la minute</span>}
           </div>
-        )}
 
-        {/* Libre info */}
-        {type === 'libre' && (
-          <div className="mb-5 bg-surface-800 rounded-lg p-4">
-            <p className="text-surface-300 text-sm">Chronomètre ouvert — facturation à la minute.</p>
-            <p className="text-brand-400 text-sm font-semibold mt-1">0.50 MAD / minute (30 MAD/h)</p>
+          <div className="flex gap-2 pt-1">
+            <Button variant="outline" onClick={onClose} className="flex-1">Annuler</Button>
+            <Button
+              onClick={handleStart}
+              disabled={loading || (type === 'temps' && useCustom && !customMinutes)}
+              className="flex-1"
+            >
+              {loading ? 'Démarrage...' : 'Démarrer'}
+            </Button>
           </div>
-        )}
-
-        {/* Summary */}
-        <div className="bg-surface-800/50 rounded-lg px-4 py-3 mb-5 text-sm text-surface-400">
-          {type === 'match' && <span>Match · {matchDuration === 8 ? '8+ min' : `${matchDuration} min`} · {calcMatchPrice(matchDuration)} MAD/match</span>}
-          {type === 'temps' && <span>Temps prépayé · {effectivePrepaidMinutes} min · {(effectivePrepaidMinutes / 60 * 30).toFixed(2)} MAD</span>}
-          {type === 'libre' && <span>Jeu libre · facturation à la minute</span>}
-        </div>
-
-        {/* Buttons */}
-        <div className="flex gap-3">
-          <button onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg bg-surface-800 text-surface-300 hover:text-white text-sm font-medium">
-            Annuler
-          </button>
-          <button onClick={handleStart} disabled={loading || (type === 'temps' && useCustom && !customMinutes)}
-            className="flex-1 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-semibold text-sm disabled:opacity-50 transition-colors">
-            {loading ? 'Démarrage...' : '▶ Démarrer'}
-          </button>
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useAuthStore } from './store/authStore'
 import { useLicenseStore } from './store/licenseStore'
 import ActivationPage from './pages/ActivationPage'
@@ -11,11 +12,34 @@ import Sidebar from './components/layout/Sidebar'
 
 export type Page = 'caisse' | 'dashboard' | 'settings'
 
+const pageVariants = {
+  initial: { opacity: 0, y: 6 },
+  animate: { opacity: 1, y: 0 },
+  exit:    { opacity: 0, y: -4 },
+}
+
+/** Apply persisted theme before first render */
+function initTheme() {
+  const saved = localStorage.getItem('playdesk_theme') ?? 'dark'
+  const root  = document.documentElement
+  if (saved === 'dark') {
+    root.classList.add('dark')
+  } else if (saved === 'light') {
+    root.classList.remove('dark')
+  } else {
+    // system
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    root.classList.toggle('dark', prefersDark)
+  }
+}
+
+initTheme()
+
 export default function App() {
   const { user } = useAuthStore()
   const { activated, setActivated } = useLicenseStore()
   const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState<Page>('caisse')
+  const [page, setPage]       = useState<Page>('caisse')
 
   useEffect(() => {
     const init = async () => {
@@ -31,27 +55,47 @@ export default function App() {
   }, [])
 
   if (loading) return (
-    <div className="h-screen bg-surface-950 flex items-center justify-center">
-      <div className="text-brand-400 text-xl font-semibold animate-pulse">Chargement...</div>
+    <div
+      className="h-screen flex items-center justify-center"
+      style={{ background: 'var(--background)' }}
+    >
+      <div
+        className="w-6 h-6 border-2 rounded-full animate-spin"
+        style={{
+          borderColor: 'var(--border)',
+          borderTopColor: 'var(--neon)',
+        }}
+      />
     </div>
   )
 
-  // Step 1: must be activated
   if (!activated) return <ActivationPage />
+  if (!user)      return <LoginPage />
 
-  // Step 2: must be logged in
-  if (!user) return <LoginPage />
-
-  // Step 3: main app
   return (
-    <div className="h-screen flex flex-col bg-surface-950 overflow-hidden">
+    <div
+      className="h-screen flex flex-col overflow-hidden"
+      style={{ background: 'var(--background)', color: 'var(--foreground)' }}
+    >
       <TitleBar />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar page={page} setPage={setPage} userRole={user.role} />
-        <main className="flex-1 overflow-auto">
-          {page === 'caisse'    && <CaissePage />}
-          {page === 'dashboard' && user.role === 'admin' && <DashboardPage />}
-          {page === 'settings'  && user.role === 'admin' && <SettingsPage />}
+        <main className="flex-1 overflow-auto" style={{ background: 'var(--background)' }}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={page}
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              className="h-full"
+            >
+              {page === 'caisse'                             && <CaissePage />}
+              {page === 'dashboard' && user.role === 'admin' && <DashboardPage />}
+              {page === 'settings'  && user.role === 'admin' && <SettingsPage />}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>
