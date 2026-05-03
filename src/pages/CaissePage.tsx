@@ -66,21 +66,25 @@ export default function CaissePage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Actives',  value: activeSessions.length, valueClass: 'text-green-400' },
-          { label: 'En pause', value: pausedSessions.length, valueClass: 'text-yellow-400' },
-          { label: 'Libres',   value: freeStations.length,   valueClass: 'text-foreground' },
-        ].map(({ label, value, valueClass }, i) => (
+          { label: 'Actives',  value: activeSessions.length, color: '#4ade80', dim: 'rgba(74,222,128,0.06)',  border: 'rgba(74,222,128,0.15)'  },
+          { label: 'En pause', value: pausedSessions.length, color: '#fbbf24', dim: 'rgba(251,191,36,0.06)',  border: 'rgba(251,191,36,0.15)'  },
+          { label: 'Libres',   value: freeStations.length,   color: 'var(--foreground)', dim: 'var(--card)', border: 'var(--border)' },
+        ].map(({ label, value, color, dim, border }, i) => (
           <motion.div
             key={label}
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.04 }}
-            className="bg-card border border-border rounded-lg px-4 py-3 flex items-center justify-between"
+            className="rounded-xl flex items-center justify-between"
+            style={{ background: dim, border: `1px solid ${border}`, padding: '20px 28px' }}
           >
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{label}</p>
-            <p className={`text-2xl font-bold font-mono tabular-nums ${valueClass}`}>{value}</p>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-2">{label}</p>
+              <p className="text-5xl font-bold font-mono tabular-nums leading-none" style={{ color }}>{value}</p>
+            </div>
+            <div style={{ width: 3, height: 36, borderRadius: 2, background: color, opacity: 0.35 }} />
           </motion.div>
         ))}
       </div>

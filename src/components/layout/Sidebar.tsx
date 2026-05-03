@@ -104,31 +104,9 @@ export default function Sidebar({ page, setPage, userRole }: Props) {
 
       {/* ── Bottom: version badge + collapse toggle side-by-side ── */}
       <div className="p-2 pb-3">
-        {collapsed ? (
-          /* Collapsed: just the toggle button, centered */
-          <div className="flex justify-center">
+        <div className={collapsed ? `flex justify-center`: `flex items-center justify-end`}>
             <CollapseBtn collapsed={collapsed} onClick={() => setCollapsed(c => !c)} />
           </div>
-        ) : (
-          /* Expanded: badge row with toggle pinned to its right */
-          <div
-            className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
-            style={{ background: 'var(--sidebar-accent)', border: '1px solid var(--sidebar-border)' }}
-          >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <span className="neon-dot shrink-0" />
-                <p className="text-[10px] font-medium tracking-wide truncate" style={{ color: 'var(--muted-foreground)' }}>
-                  PlayDesk
-                </p>
-              </div>
-              <p className="text-[10px] tracking-wide" style={{ color: 'var(--muted-foreground)', opacity: 0.5 }}>
-                v1.0.0 · Activé
-              </p>
-            </div>
-            <CollapseBtn collapsed={collapsed} onClick={() => setCollapsed(c => !c)} />
-          </div>
-        )}
       </div>
     </motion.aside>
   )

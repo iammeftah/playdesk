@@ -420,3 +420,10 @@
   border-color: var(--neon);
   box-shadow: 0 0 0 1px var(--neon), 0 0 16px var(--neon-dim);
 }
+
+
+.galaxy-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}

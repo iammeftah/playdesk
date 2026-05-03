@@ -9,6 +9,7 @@ import StartSessionModal from '../session/StartSessionModal'
 import EndSessionModal from '../session/EndSessionModal'
 import { useAuthStore } from '../../store/authStore'
 import { beepWarning, beepEnd, beepLong } from '../../lib/audio'
+import ps5Img from '../../assets/ps5.png'
 
 interface Props { station: Station; session?: Session; onRefresh: () => void }
 
@@ -145,6 +146,52 @@ export default function StationCard({ station, session, onRefresh }: Props) {
         transition={{ duration: 0.15 }}
         className={`glow-card relative flex flex-col overflow-hidden ${glowByStatus[status]}`}
       >
+        {/* PS5 image block — clickable when libre to start session */}
+        <div
+          className="relative flex items-center justify-center overflow-hidden py-16"
+          onClick={!session ? () => setShowStart(true) : undefined}
+          style={{
+            height:       250,
+            background:   'var(--background)',
+            borderBottom: '1px solid var(--border)',
+            cursor:       !session ? 'pointer' : 'default',
+          }}
+        >
+          <img
+            src={ps5Img}
+            alt={station.name}
+            style={{
+              height:     '250px',
+              width:      'auto',
+              objectFit:  'contain',
+              filter:     status === 'libre'
+                ? 'brightness(0.65) saturate(0)'
+                : status === 'pause'
+                  ? 'brightness(0.45) saturate(0.4)'
+                  : 'brightness(1)',
+              transition: 'filter 0.3s ease',
+            }}
+          />
+
+
+          {/* Ghost number watermark */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span
+              style={{
+                fontSize:      '72px',
+                fontWeight:    900,
+                fontFamily:    'monospace',
+                color:         'rgba(255,255,255,0.05)',
+                letterSpacing: '-4px',
+                userSelect:    'none',
+                lineHeight:    1,
+              }}
+            >
+              {station.name.match(/\d+(?!.*\d)/)?.[0] ?? '?'}
+            </span>
+          </div>
+        </div>
+
         <div className="p-4 flex flex-col gap-3.5 flex-1">
 
           {/* Header */}
@@ -298,33 +345,15 @@ export default function StationCard({ station, session, onRefresh }: Props) {
               </div>
             </>
           ) : (
-            /* Empty state — start button */
-            <button
-              onClick={() => setShowStart(true)}
-              className="group flex-1 flex flex-col items-center justify-center py-8 rounded-lg border border-dashed transition-all duration-200"
-              style={{ borderColor: 'var(--border)' }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'var(--muted-foreground)'
-                e.currentTarget.style.background  = 'var(--muted)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'var(--border)'
-                e.currentTarget.style.background  = 'transparent'
-              }}
-            >
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center mb-2.5 transition-colors"
-                style={{ background: 'var(--muted)' }}
+            /* Empty state — just a small hint, image above is the click target */
+            <div className="flex-1 flex items-center justify-center">
+              <p
+                className="text-[10px] uppercase tracking-widest"
+                style={{ color: 'var(--muted-foreground)', opacity: 0.5 }}
               >
-                <Play className="w-3.5 h-3.5" style={{ color: 'var(--muted-foreground)' }} />
-              </div>
-              <span
-                className="text-[11px] font-medium tracking-widest uppercase"
-                style={{ color: 'var(--muted-foreground)' }}
-              >
-                Démarrer
-              </span>
-            </button>
+                Cliquer pour démarrer
+              </p>
+            </div>
           )}
         </div>
       </motion.div>
