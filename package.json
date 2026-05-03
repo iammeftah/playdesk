@@ -1,0 +1,60 @@
+{
+  "name": "playdesk",
+  "version": "1.0.0",
+  "description": "Système de gestion de salle de jeux",
+  "main": "dist-electron/main/index.js",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"npm run electron:dev\"",
+    "electron:dev": "wait-on tcp:5173 && tsc -p tsconfig.electron.json && mkdir -p dist-electron/licensing && cp electron/licensing/keys_embedded.js dist-electron/licensing/keys_embedded.js && electron . --no-sandbox",
+    "build": "tsc -p tsconfig.json && vite build && tsc -p tsconfig.electron.json && mkdir -p dist-electron/licensing && cp electron/licensing/keys_embedded.js dist-electron/licensing/keys_embedded.js",
+    "dist:win": "npm run build && electron-builder --win",
+    "typecheck": "tsc --noEmit",
+    "keys:generate": "node tools/key-generator/keygen.js generate",
+    "keys:list": "node tools/key-generator/keygen.js list",
+    "keys:reset": "node tools/key-generator/keygen.js reset"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^9.4.3",
+    "drizzle-orm": "^0.30.4",
+    "node-machine-id": "^1.1.12",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "recharts": "^2.12.2",
+    "zustand": "^4.5.2"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.7.2",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/node": "^20.11.5",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.17",
+    "concurrently": "^8.2.2",
+    "drizzle-kit": "^0.20.14",
+    "electron": "^29.1.0",
+    "electron-builder": "^24.9.1",
+    "postcss": "^8.4.33",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.12",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.playdesk.app",
+    "productName": "PlayDesk",
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "resources/icon.ico"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ]
+  }
+}

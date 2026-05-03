@@ -1,0 +1,86 @@
+# ─────────────────────────────────────────
+#  Dependencies
+# ─────────────────────────────────────────
+node_modules/
+tools/key-generator/node_modules/
+
+# ─────────────────────────────────────────
+#  Build outputs
+# ─────────────────────────────────────────
+dist/
+dist-electron/
+out/
+
+# ─────────────────────────────────────────
+#  Electron packaged releases
+# ─────────────────────────────────────────
+release/
+*.exe
+*.exe.blockmap
+*.dmg
+*.AppImage
+*.deb
+*.rpm
+*.snap
+builder-debug.yml
+builder-effective-config.yaml
+latest.yml
+
+# ─────────────────────────────────────────
+#  Database (runtime data — never commit)
+# ─────────────────────────────────────────
+*.db
+*.db-shm
+*.db-wal
+
+# ─────────────────────────────────────────
+#  Security — NEVER commit these
+# ─────────────────────────────────────────
+electron/licensing/keys_embedded.js
+tools/key-generator/keys.json
+tools/key-generator/keygen.js
+*.pem
+*.key
+*.p12
+*.pfx
+
+# ─────────────────────────────────────────
+#  Logs
+# ─────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─────────────────────────────────────────
+#  Environment
+# ─────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─────────────────────────────────────────
+#  OS
+# ─────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─────────────────────────────────────────
+#  Editor
+# ─────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ─────────────────────────────────────────
+#  TypeScript
+# ─────────────────────────────────────────
+*.tsbuildinfo
+
+# ─────────────────────────────────────────
+#  Vite
+# ─────────────────────────────────────────
+.vite/
