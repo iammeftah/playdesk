@@ -28,16 +28,41 @@ function Field({ label, desc, field, unit = 'MAD', tarifs, setTarifs }: FieldPro
         <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{label}</p>
         <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>{desc}</p>
       </div>
-      <div className="flex items-center gap-2">
+      {/* Input with inline unit suffix */}
+      <div
+        className="flex items-center overflow-hidden"
+        style={{
+          background: 'var(--input)',
+          border: '1px solid var(--border)',
+          borderRadius: '8px',
+          width: '120px',
+          transition: 'border-color 0.15s ease',
+        }}
+        onFocusCapture={e => (e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)')}
+        onBlurCapture={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+      >
         <input
           type="number"
           min="0"
           step="0.5"
           value={tarifs[field]}
           onChange={e => setTarifs({ ...tarifs, [field]: parseFloat(e.target.value) || 0 })}
-          className="settings-input w-24 text-right font-mono text-sm"
+          className="flex-1 min-w-0 text-right font-mono text-sm px-2 py-2 bg-transparent outline-none border-none"
+          style={{ color: 'var(--foreground)' }}
         />
-        <span className="text-sm w-12" style={{ color: 'var(--muted-foreground)' }}>{unit}</span>
+        <span
+          className="text-xs font-medium px-2 shrink-0 select-none"
+          style={{
+            color: 'var(--muted-foreground)',
+            borderLeft: '1px solid var(--border)',
+            padding: '0 8px',
+            lineHeight: '34px',
+            background: 'var(--muted)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {unit}
+        </span>
       </div>
     </div>
   )
@@ -56,7 +81,7 @@ export default function TarifsSettings() {
   const SectionCard = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div
       className="rounded-xl px-5 mb-5 w-full"
-      style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+      style={{ background: 'var(--muted)', border: '1px solid var(--border)' }}
     >
       <h4
         className="text-[11px] font-semibold uppercase tracking-wider py-3"
@@ -104,10 +129,7 @@ export default function TarifsSettings() {
           ].map(item => (
             <div key={item.label} className="flex items-baseline gap-1">
               <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{item.label}</span>
-              <span
-                className="text-sm font-semibold font-mono"
-                style={{ color: 'var(--neon)' }}
-              >
+              <span className="text-sm font-semibold font-mono" style={{ color: 'var(--neon)' }}>
                 {item.value}
               </span>
               <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>MAD</span>
@@ -118,13 +140,14 @@ export default function TarifsSettings() {
 
       <button
         onClick={handleSave}
-        className="flex items-center justify-center gap-2 w-full py-2.5 text-sm font-semibold rounded-lg transition-all"
+        className="flex items-center justify-center gap-2 w-full py-2 text-xs font-semibold rounded-lg transition-all"
         style={{
-          background: saved ? '#16a34a' : 'var(--primary)',
-          color: saved ? '#ffffff' : 'var(--primary-foreground)',
+          background: saved ? 'rgba(22,163,74,0.12)' : 'var(--muted)',
+          color: saved ? '#4ade80' : 'var(--muted-foreground)',
+          border: saved ? '1px solid rgba(22,163,74,0.25)' : '1px solid var(--border)',
         }}
       >
-        {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+        {saved ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
         {saved ? 'Sauvegardé' : 'Sauvegarder les tarifs'}
       </button>
     </div>

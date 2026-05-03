@@ -97,10 +97,6 @@ export default function LoginPage() {
           <Button onClick={handleLogin} disabled={loading || !username || !password} className="w-full mt-1">
             {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Connexion...</> : 'Se connecter'}
           </Button>
-
-          <p className="text-muted-foreground/60 text-[10px] text-center tracking-wide">
-            Par défaut : <span className="text-muted-foreground font-mono">admin</span> / <span className="text-muted-foreground font-mono">admin123</span>
-          </p>
         </div>
       </motion.div>
     </div>

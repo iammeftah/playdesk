@@ -3,11 +3,11 @@ import db from '../db/client'
 
 ipcMain.handle('dashboard:summary', async (_e, date: string) => {
   const d = date || new Date().toISOString().slice(0, 10)
-  const revenue   = (db.prepare(`SELECT COALESCE(SUM(total_amount),0) as total FROM sessions WHERE status='ended' AND DATE(started_at)=?`).get(d) as any).total
-  const count     = (db.prepare(`SELECT COUNT(*) as c FROM sessions WHERE status='ended' AND DATE(started_at)=?`).get(d) as any).c
-  const byType    = db.prepare(`SELECT type, COUNT(*) as c FROM sessions WHERE status='ended' AND DATE(started_at)=? GROUP BY type`).all(d)
-  const avgRow    = db.prepare(`SELECT AVG(started_at_unix - ended_at_unix) as avg FROM sessions WHERE status='ended' AND ended_at_unix IS NOT NULL AND DATE(started_at)=?`).get(d) as any
-  const avgMin    = avgRow?.avg ? Math.round(Math.abs(avgRow.avg) / 60) : 0
+  const revenue    = (db.prepare(`SELECT COALESCE(SUM(total_amount),0) as total FROM sessions WHERE status='ended' AND DATE(started_at)=?`).get(d) as any).total
+  const count      = (db.prepare(`SELECT COUNT(*) as c FROM sessions WHERE status='ended' AND DATE(started_at)=?`).get(d) as any).c
+  const byType     = db.prepare(`SELECT type, COUNT(*) as c FROM sessions WHERE status='ended' AND DATE(started_at)=? GROUP BY type`).all(d)
+  const avgRow     = db.prepare(`SELECT AVG(started_at_unix - ended_at_unix) as avg FROM sessions WHERE status='ended' AND ended_at_unix IS NOT NULL AND DATE(started_at)=?`).get(d) as any
+  const avgMin     = avgRow?.avg ? Math.round(Math.abs(avgRow.avg) / 60) : 0
   const topStation = db.prepare(`SELECT st.name, COUNT(*) as c FROM sessions s JOIN stations st ON s.station_id=st.id WHERE s.status='ended' AND DATE(s.started_at)=? GROUP BY s.station_id ORDER BY c DESC LIMIT 1`).get(d) as any
   return { revenue, sessionCount: count, byType, avgDuration: avgMin, topStation: topStation?.name }
 })
@@ -24,8 +24,22 @@ ipcMain.handle('dashboard:stationStats', async () => {
   return db.prepare(`SELECT st.name, COUNT(s.id) as sessions, COALESCE(SUM(s.total_amount),0) as revenue FROM stations st LEFT JOIN sessions s ON st.id=s.station_id AND s.status='ended' GROUP BY st.id ORDER BY revenue DESC`).all()
 })
 
+// Updated: returns day-of-week + hour breakdown for the 2D thermal heatmap
+// dow: 0=Sun,1=Mon,...,6=Sat (sqlite strftime('%w'))
+// hour: 00-23
+// Filtered to operating hours 09-23 only
 ipcMain.handle('dashboard:peakHours', async () => {
-  return db.prepare(`SELECT strftime('%H', started_at) as hour, COUNT(*) as count FROM sessions WHERE status='ended' GROUP BY hour ORDER BY hour`).all()
+  return db.prepare(`
+    SELECT
+      strftime('%w', started_at) as dow,
+      strftime('%H', started_at) as hour,
+      COUNT(*) as count
+    FROM sessions
+    WHERE status = 'ended'
+      AND CAST(strftime('%H', started_at) AS INTEGER) BETWEEN 9 AND 23
+    GROUP BY dow, hour
+    ORDER BY dow, hour
+  `).all()
 })
 
 ipcMain.handle('dashboard:managerActivity', async () => {

@@ -29,3 +29,27 @@ ipcMain.handle('users:disable', async (_e, id: number) => {
   db.prepare('UPDATE users SET active = 0 WHERE id = ?').run(id)
   return { success: true }
 })
+
+ipcMain.handle('users:enable', async (_e, id: number) => {
+  db.prepare('UPDATE users SET active = 1 WHERE id = ?').run(id)
+  return { success: true }
+})
+
+ipcMain.handle('users:delete', async (_e, id: number) => {
+  try {
+    // Reassign all their sessions to admin (id=1) to preserve revenue history,
+    // then delete the user — atomically in a single transaction.
+    const adminUser = db.prepare("SELECT id FROM users WHERE role = 'admin' ORDER BY id ASC LIMIT 1").get() as any
+    const fallbackId = adminUser?.id ?? 1
+
+    const deleteTransaction = db.transaction(() => {
+      db.prepare('UPDATE sessions SET manager_id = ? WHERE manager_id = ?').run(fallbackId, id)
+      db.prepare('DELETE FROM users WHERE id = ?').run(id)
+    })
+
+    deleteTransaction()
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+})

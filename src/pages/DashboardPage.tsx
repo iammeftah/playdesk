@@ -6,6 +6,7 @@ import RevenueChart from '../components/dashboard/RevenueChart'
 import StationUtilization from '../components/dashboard/StationUtilization'
 import PeakHoursHeatmap from '../components/dashboard/PeakHoursHeatmap'
 import SessionHistory from '../components/dashboard/SessionHistory'
+import SessionTypePie from '../components/dashboard/SessionTypePie'
 import SummaryCards from '../components/dashboard/SummaryCards'
 import DatePicker from '../components/common/DatePicker'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -127,8 +128,8 @@ export default function DashboardPage() {
         </Card>
       </motion.div>
 
-      {/* 2-col row */}
-      <motion.div {...fadeUp(0.12)} className="grid grid-cols-2 gap-5">
+      {/* 3-col row */}
+      <motion.div {...fadeUp(0.12)} className="grid grid-cols-3 gap-5">
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium text-foreground">Utilisation stations</CardTitle>
@@ -144,6 +145,15 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             {loading ? <Skeleton /> : <PeakHoursHeatmap data={peakHours} />}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium text-foreground">Répartition sessions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading || !summary ? <Skeleton /> : <SessionTypePie byType={summary.byType ?? []} />}
           </CardContent>
         </Card>
       </motion.div>

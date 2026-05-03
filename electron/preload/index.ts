@@ -42,5 +42,7 @@ contextBridge.exposeInMainWorld('playdesk', {
     create:  (data: object) => ipcRenderer.invoke('users:create', data),
     update:  (id: number, data: object) => ipcRenderer.invoke('users:update', id, data),
     disable: (id: number) => ipcRenderer.invoke('users:disable', id),
+    enable:  (id: number) => ipcRenderer.invoke('users:enable', id),
+    delete:  (id: number) => ipcRenderer.invoke('users:delete', id),
   },
 })

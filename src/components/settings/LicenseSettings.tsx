@@ -11,7 +11,7 @@ export default function LicenseSettings() {
   }, [])
 
   return (
-    <div className="max-w-xl">
+    <div className="w-full">
       <p className="text-sm mb-6" style={{ color: 'var(--muted-foreground)' }}>
         Informations sur votre licence PlayDesk.
       </p>
