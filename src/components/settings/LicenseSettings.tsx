@@ -1,13 +1,18 @@
 import { useEffect, useState } from 'react'
-import { ShieldCheck, ShieldOff, Clock, AlertTriangle, Code2, KeyRound, Loader2, AlertCircle } from 'lucide-react'
+import {
+  ShieldCheck, ShieldOff, Clock, AlertTriangle,
+  Code2, KeyRound, Loader2, AlertCircle, CalendarClock,
+} from 'lucide-react'
 
 type LicenseStatus = {
-  activated:    boolean
-  activatedAt?: string
-  trial?:       boolean
-  expired?:     boolean
-  trialEndsAt?: number
-  daysLeft?:    number
+  activated:              boolean
+  activatedAt?:           string
+  subscriptionExpiresAt?: string
+  subscriptionExpired?:   boolean
+  trial?:                 boolean
+  expired?:               boolean
+  trialEndsAt?:           number
+  daysLeft?:              number
 }
 
 export default function LicenseSettings() {
@@ -18,7 +23,6 @@ export default function LicenseSettings() {
   const [error, setError]     = useState('')
   const [success, setSuccess] = useState(false)
 
-  // Live countdown ticker (updates every minute)
   const [, setTick] = useState(0)
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 60_000)
@@ -27,14 +31,13 @@ export default function LicenseSettings() {
 
   useEffect(() => {
     window.playdesk.license.status()
-      .then(setStatus)
+      .then(s => setStatus(s as LicenseStatus))
       .catch(() => setStatus({ activated: true }))
   }, [success])
 
   const handleKeyInput = (raw: string) => {
     const clean = raw.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 16)
-    const parts  = clean.match(/.{1,4}/g) ?? []
-    setKey(parts.join('-'))
+    setKey((clean.match(/.{1,4}/g) ?? []).join('-'))
     setError('')
   }
 
@@ -44,120 +47,133 @@ export default function LicenseSettings() {
     setError('')
     try {
       const res = await window.playdesk.license.activate(key)
-      if (res.success) {
-        setSuccess(true)
-        setShowKey(false)
-        setKey('')
-      } else {
-        setError(res.error ?? 'Clé invalide')
-      }
+      if (res.success) { setSuccess(true); setShowKey(false); setKey('') }
+      else setError(res.error ?? 'Clé invalide')
     } catch {
       setError('Erreur lors de l\'activation')
     }
     setLoading(false)
   }
 
-  // ── Compute live days/hours left ──────────────────────────────
-  const computeTimeLeft = () => {
+  const computeTrialTimeLeft = () => {
     if (!status?.trialEndsAt) return { days: 0, hours: 0 }
-    const ms    = status.trialEndsAt - Date.now()
-    const days  = Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)))
-    const hours = Math.max(0, Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)))
-    return { days, hours }
+    const ms = status.trialEndsAt - Date.now()
+    return {
+      days:  Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24))),
+      hours: Math.max(0, Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))),
+    }
   }
 
-  const { days, hours } = computeTimeLeft()
+  const { days, hours } = computeTrialTimeLeft()
   const trialUrgent = status?.trial && !status.expired && days <= 2
+
+  const isActivated          = status?.activated === true
+  const isSubscriptionValid   = isActivated && !status?.subscriptionExpired
+  const isSubscriptionExpired = isActivated && status?.subscriptionExpired === true
+  const isTrialActive         = !isActivated && status?.trial && !status.expired
+  const isTrialExpired        = !isActivated && status?.trial && status.expired
+
+  const statusLabel = isSubscriptionValid    ? 'Licence active'
+    : isSubscriptionExpired                  ? 'Abonnement expiré'
+    : isTrialActive                          ? 'Version d\'essai'
+    : isTrialExpired                         ? 'Essai expiré'
+    : 'Non activé'
+
+  const statusSub = isSubscriptionValid && status?.subscriptionExpiresAt
+    ? `Expire le ${new Date(status.subscriptionExpiresAt).toLocaleDateString('fr-MA')}`
+    : isSubscriptionExpired && status?.subscriptionExpiresAt
+    ? `Expiré le ${new Date(status.subscriptionExpiresAt).toLocaleDateString('fr-MA')}`
+    : isTrialActive   ? `${days}j ${hours}h restants`
+    : isTrialExpired  ? 'Votre période d\'essai est terminée'
+    : 'Aucune licence détectée'
+
+  const StatusIcon = isSubscriptionValid ? ShieldCheck : isTrialActive ? Clock : ShieldOff
+
+  const iconWrapClass = isSubscriptionValid    ? 'bg-green-400/10'
+    : isSubscriptionExpired                    ? 'bg-orange-400/10'
+    : isTrialActive                            ? 'bg-yellow-400/10'
+    : 'bg-red-400/10'
+
+  const iconClass = isSubscriptionValid    ? 'text-green-400'
+    : isSubscriptionExpired                ? 'text-orange-400'
+    : isTrialActive                        ? 'text-yellow-400'
+    : 'text-red-400'
+
+  const dotClass = isSubscriptionValid    ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)]'
+    : isSubscriptionExpired               ? 'bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.6)]'
+    : isTrialActive                       ? 'bg-yellow-400 shadow-[0_0_8px_rgba(234,179,8,0.6)]'
+    : 'bg-red-400 shadow-[0_0_8px_rgba(239,68,68,0.6)]'
+
+  const canActivate = !isSubscriptionValid
 
   return (
     <div className="w-full flex flex-col gap-4">
-      <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+      <p className="text-sm text-muted-foreground">
         Informations sur votre licence PlayDesk.
       </p>
 
-      {/* ── Main status card ───────────────────────────────────── */}
-      <div className="rounded-xl p-5 flex flex-col gap-4"
-        style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
+      <div className="rounded-xl p-5 flex flex-col gap-4 bg-card border border-border">
 
         {/* Status row */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-            style={{
-              background: status?.activated
-                ? 'rgba(74,222,128,0.1)'
-                : status?.trial && !status.expired
-                  ? 'rgba(234,179,8,0.1)'
-                  : 'rgba(239,68,68,0.1)',
-            }}>
-            {status?.activated
-              ? <ShieldCheck className="w-5 h-5" style={{ color: '#4ade80' }} />
-              : status?.trial && !status.expired
-                ? <Clock className="w-5 h-5" style={{ color: '#eab308' }} />
-                : <ShieldOff className="w-5 h-5" style={{ color: '#ef4444' }} />
-            }
+          <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${iconWrapClass}`}>
+            <StatusIcon className={`w-5 h-5 ${iconClass}`} />
           </div>
-
           <div className="flex-1">
-            <h4 className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
-              {status?.activated
-                ? 'Licence active'
-                : status?.trial && !status.expired
-                  ? 'Version d\'essai'
-                  : status?.expired
-                    ? 'Essai expiré'
-                    : 'Non activé'}
-            </h4>
-            <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
-              {status?.activated
-                ? 'Toutes les fonctionnalités sont disponibles'
-                : status?.trial && !status.expired
-                  ? `${days}j ${hours}h restants`
-                  : status?.expired
-                    ? 'Votre période d\'essai est terminée'
-                    : 'Aucune licence détectée'}
-            </p>
+            <h4 className="text-sm font-semibold text-foreground">{statusLabel}</h4>
+            <p className="text-xs text-muted-foreground">{statusSub}</p>
           </div>
-
-          {/* Status dot */}
-          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{
-            background: status?.activated
-              ? '#4ade80'
-              : status?.trial && !status.expired
-                ? '#eab308'
-                : '#ef4444',
-            boxShadow: status?.activated
-              ? '0 0 8px rgba(74,222,128,0.6)'
-              : status?.trial && !status.expired
-                ? '0 0 8px rgba(234,179,8,0.6)'
-                : '0 0 8px rgba(239,68,68,0.6)',
-          }} />
+          <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${dotClass}`} />
         </div>
 
-        <div style={{ height: 1, background: 'var(--border)' }} />
+        <div className="h-px bg-border" />
 
-        {/* ── Trial countdown bar ─────────────────────────────── */}
-        {status?.trial && !status.expired && status.trialEndsAt && (
+        {/* Subscription expiry detail */}
+        {isSubscriptionValid && status?.subscriptionExpiresAt && (
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <CalendarClock className="w-3.5 h-3.5" />
+              <span>Abonnement valide jusqu'au</span>
+            </div>
+            <span className={`font-semibold font-mono text-xs ${(status.daysLeft ?? 0) <= 7 ? 'text-orange-400' : 'text-green-400'}`}>
+              {new Date(status.subscriptionExpiresAt).toLocaleDateString('fr-MA')}
+              {(status.daysLeft ?? 0) <= 30 && (
+                <span className="ml-2 opacity-70">({status.daysLeft}j)</span>
+              )}
+            </span>
+          </div>
+        )}
+
+        {/* Subscription expired banner */}
+        {isSubscriptionExpired && (
+          <div className="rounded-lg px-4 py-3 flex items-start gap-3 bg-orange-400/8 border border-orange-400/20">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-orange-400" />
+            <div>
+              <p className="text-sm font-medium text-orange-400">Abonnement expiré</p>
+              <p className="text-xs mt-0.5 text-orange-400/70">
+                Renouvelez votre licence avec une nouvelle clé PLAY-XXXX-XXXX-XXXX.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Trial countdown bar */}
+        {isTrialActive && status?.trialEndsAt && (
           <div className="flex flex-col gap-2">
-            <div className="flex justify-between text-xs" style={{ color: 'var(--muted-foreground)' }}>
+            <div className="flex justify-between text-xs text-muted-foreground">
               <span>Période d'essai</span>
-              <span style={{ color: trialUrgent ? '#ef4444' : '#eab308', fontWeight: 500 }}>
+              <span className={`font-medium ${trialUrgent ? 'text-red-400' : 'text-yellow-400'}`}>
                 {days}j {hours}h restants
               </span>
             </div>
-            {/* Progress bar: full = 7 days, depletes over time */}
-            <div className="w-full rounded-full overflow-hidden" style={{ height: 6, background: 'rgba(255,255,255,0.07)' }}>
+            <div className="w-full h-1.5 rounded-full bg-white/7 overflow-hidden">
               <div
-                className="h-full rounded-full transition-all"
-                style={{
-                  width: `${Math.max(2, (days / 7) * 100)}%`,
-                  background: trialUrgent
-                    ? 'linear-gradient(90deg, #ef4444, #f97316)'
-                    : 'linear-gradient(90deg, #7F77DD, #eab308)',
-                }}
+                className={`h-full rounded-full transition-all ${trialUrgent ? 'bg-gradient-to-r from-red-500 to-orange-500' : 'bg-gradient-to-r from-indigo-400 to-yellow-400'}`}
+                style={{ width: `${Math.max(2, (days / 7) * 100)}%` }}
               />
             </div>
             {trialUrgent && (
-              <div className="flex items-center gap-2 text-xs" style={{ color: '#ef4444' }}>
+              <div className="flex items-center gap-2 text-xs text-red-400">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                 Activez votre licence avant expiration pour ne pas perdre l'accès
               </div>
@@ -165,48 +181,53 @@ export default function LicenseSettings() {
           </div>
         )}
 
-        {/* ── Expired banner ──────────────────────────────────── */}
-        {status?.expired && (
-          <div className="rounded-lg px-4 py-3 flex items-start gap-3"
-            style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#ef4444' }} />
+        {/* Trial expired banner */}
+        {isTrialExpired && (
+          <div className="rounded-lg px-4 py-3 flex items-start gap-3 bg-red-500/8 border border-red-500/20">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
             <div>
-              <p className="text-sm font-medium" style={{ color: '#ef4444' }}>Essai terminé</p>
-              <p className="text-xs mt-0.5" style={{ color: 'rgba(239,68,68,0.7)' }}>
+              <p className="text-sm font-medium text-red-400">Essai terminé</p>
+              <p className="text-xs mt-0.5 text-red-400/70">
                 Entrez une clé de série pour continuer à utiliser PlayDesk.
               </p>
             </div>
           </div>
         )}
 
-        {/* ── Activated at ───────────────────────────────────── */}
-        {status?.activated && status.activatedAt && (
+        {/* Activated at */}
+        {isActivated && status?.activatedAt && (
           <div className="flex items-center justify-between text-sm">
-            <span style={{ color: 'var(--muted-foreground)' }}>Activé le</span>
-            <span className="font-medium" style={{ color: 'var(--foreground)' }}>
+            <span className="text-muted-foreground">Activé le</span>
+            <span className="font-medium text-foreground">
               {new Date(status.activatedAt).toLocaleDateString('fr-MA')}
             </span>
           </div>
         )}
 
-        {/* ── Activate button (shown for trial or expired) ────── */}
-        {!status?.activated && (
+        {/* Activate / Renew button */}
+        {canActivate && (
           <button
             onClick={() => { setShowKey(v => !v); setError(''); setKey('') }}
-            className="w-full rounded-lg py-2.5 text-sm font-semibold flex items-center justify-center gap-2 transition-all"
-            style={{
-              background: 'rgba(127,119,221,0.15)',
-              border: '1px solid rgba(127,119,221,0.35)',
-              color: '#7F77DD',
-            }}
+            className="w-full rounded-lg py-2.5 text-sm font-semibold flex items-center justify-center gap-2 bg-indigo-500/15 border border-indigo-500/35 text-indigo-400 hover:bg-indigo-500/25 transition-colors cursor-pointer"
           >
             <KeyRound className="w-4 h-4" />
-            {showKey ? 'Masquer' : 'Activer avec une clé de série'}
+            {showKey ? 'Masquer' : isSubscriptionExpired ? 'Renouveler l\'abonnement' : 'Activer avec une clé de série'}
           </button>
         )}
 
-        {/* ── Inline key input ────────────────────────────────── */}
-        {showKey && !status?.activated && (
+        {/* Renewal button for active subscriptions */}
+        {isSubscriptionValid && (
+          <button
+            onClick={() => { setShowKey(v => !v); setError(''); setKey('') }}
+            className="w-full rounded-lg py-2.5 text-sm font-semibold flex items-center justify-center gap-2 border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+          >
+            <KeyRound className="w-4 h-4" />
+            {showKey ? 'Masquer' : 'Renouveler avec une nouvelle clé'}
+          </button>
+        )}
+
+        {/* Inline key input */}
+        {showKey && (
           <div className="flex flex-col gap-3">
             <input
               type="text"
@@ -216,16 +237,11 @@ export default function LicenseSettings() {
               placeholder="PLAY-XXXX-XXXX-XXXX"
               maxLength={19}
               spellCheck={false}
-              className="w-full rounded-lg px-4 py-2.5 text-center font-mono text-sm outline-none transition-all"
-              style={{
-                background: 'rgba(0,0,0,0.2)',
-                border: error ? '1px solid #ef4444' : '1px solid rgba(127,119,221,0.3)',
-                color: 'var(--foreground)',
-                letterSpacing: '0.08em',
-              }}
+              autoFocus
+              className={`w-full rounded-lg px-4 py-2.5 text-center font-mono text-sm outline-none transition-all bg-black/20 text-foreground tracking-[0.08em] border ${error ? 'border-red-500' : 'border-indigo-500/30 focus:border-indigo-500/70'}`}
             />
             {error && (
-              <div className="flex items-center gap-2 text-xs" style={{ color: '#ef4444' }}>
+              <div className="flex items-center gap-2 text-xs text-red-400">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 {error}
               </div>
@@ -233,12 +249,7 @@ export default function LicenseSettings() {
             <button
               onClick={handleActivate}
               disabled={loading || key.length < 19}
-              className="w-full rounded-lg py-2.5 text-sm font-semibold flex items-center justify-center gap-2 transition-all"
-              style={{
-                background: loading || key.length < 19 ? 'rgba(127,119,221,0.3)' : '#7F77DD',
-                color: '#fff',
-                cursor: loading || key.length < 19 ? 'not-allowed' : 'pointer',
-              }}
+              className="w-full rounded-lg py-2.5 text-sm font-semibold flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
             >
               {loading
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Vérification...</>
@@ -248,23 +259,20 @@ export default function LicenseSettings() {
           </div>
         )}
 
-        {/* ── Dev mode ────────────────────────────────────────── */}
+        {/* Dev mode banner */}
         {(status as any)?.dev && (
-          <div className="rounded-lg px-4 py-3 flex items-start gap-3"
-            style={{ background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.2)' }}>
-            <Code2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#eab308' }} />
+          <div className="rounded-lg px-4 py-3 flex items-start gap-3 bg-yellow-400/8 border border-yellow-400/20">
+            <Code2 className="w-4 h-4 shrink-0 mt-0.5 text-yellow-400" />
             <div>
-              <p className="text-sm font-medium" style={{ color: '#eab308' }}>Mode développement</p>
-              <p className="text-xs mt-0.5" style={{ color: 'rgba(234,179,8,0.6)' }}>
-                La vérification de licence est désactivée
-              </p>
+              <p className="text-sm font-medium text-yellow-400">Mode développement</p>
+              <p className="text-xs mt-0.5 text-yellow-400/60">La vérification de licence est désactivée</p>
             </div>
           </div>
         )}
 
-        {/* ── Footer ──────────────────────────────────────────── */}
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
-          <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+        {/* Footer */}
+        <div className="pt-4 border-t border-border">
+          <p className="text-xs text-muted-foreground">
             PlayDesk v1.0.1 · SQLite local · Hors ligne
           </p>
         </div>

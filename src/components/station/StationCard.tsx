@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Play, Pause, Square, Plus } from 'lucide-react'
 import { Station, Session } from '../../types'
 import StationBadge from './StationBadge'
 import { formatTime, formatMAD } from '../../lib/utils'
 import { calcSessionAmount, getTempsProgress } from '../../lib/pricing'
 import StartSessionModal from '../session/StartSessionModal'
-import EndSessionModal from '../session/EndSessionModal'
-import { useAuthStore } from '../../store/authStore'
+import EndSessionModal   from '../session/EndSessionModal'
+import { useAuthStore }  from '../../store/authStore'
+import { useUndoStore }  from '../../store/undoStore'
 import { beepWarning, beepEnd, beepLong } from '../../lib/audio'
 import ps5Img from '../../assets/ps5.png'
 
@@ -45,54 +46,48 @@ const glowByStatus: Record<StationStatus, string> = {
   expired: 'glow-expired',
 }
 
-// Inline-style action button — adapts to theme
-function ActionButton({
-  onClick,
-  disabled,
-  children,
-  variant = 'default',
+// ── Hover button — theme-aware, no hardcoded rgba ────────────────────────────
+function HoverBtn({
+  onClick, disabled, children, color, delay = 0, flex = false,
 }: {
-  onClick: () => void
+  onClick:   () => void
   disabled?: boolean
-  children: React.ReactNode
-  variant?: 'default' | 'amber' | 'red' | 'green'
+  children:  React.ReactNode
+  color:     'default' | 'amber' | 'red' | 'green'
+  delay?:    number
+  flex?:     boolean
 }) {
-  const styles: Record<string, React.CSSProperties> = {
-    default: { color: 'var(--muted-foreground)', border: '1px solid var(--border)', background: 'transparent' },
-    amber:   { color: '#fbbf24',                  border: '1px solid rgba(251,191,36,0.2)', background: 'transparent' },
-    red:     { color: '#f87171',                  border: '1px solid rgba(239,68,68,0.2)',  background: 'transparent' },
-    green:   { color: '#4ade80',                  border: '1px solid rgba(74,222,128,0.2)', background: 'transparent' },
+  const colorClass: Record<string, string> = {
+    default: 'border-border/60 text-foreground bg-background/70 hover:bg-muted/80',
+    amber:   'border-amber-400/40 text-amber-500 dark:text-amber-400 bg-amber-50/80 dark:bg-amber-400/10 hover:bg-amber-100/80 dark:hover:bg-amber-400/15',
+    red:     'border-red-400/40   text-red-500   dark:text-red-400   bg-red-50/80   dark:bg-red-400/10   hover:bg-red-100/80   dark:hover:bg-red-400/15',
+    green:   'border-green-500/40 text-green-600 dark:text-green-400 bg-green-50/80 dark:bg-green-400/10 hover:bg-green-100/80 dark:hover:bg-green-400/15',
   }
-  const hoverStyles: Record<string, Partial<React.CSSProperties>> = {
-    default: { color: 'var(--foreground)',  background: 'var(--muted)' },
-    amber:   { color: '#fde68a',            background: 'rgba(251,191,36,0.08)' },
-    red:     { color: '#fca5a5',            background: 'rgba(239,68,68,0.08)' },
-    green:   { color: '#86efac',            background: 'rgba(74,222,128,0.08)' },
-  }
-
-  const base = styles[variant]
-  const hover = hoverStyles[variant]
-
   return (
-    <button
+    <motion.button
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 5 }}
+      transition={{ delay, duration: 0.15 }}
       onClick={onClick}
       disabled={disabled}
-      className="flex flex-1 items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all disabled:opacity-40"
-      style={base}
-      onMouseEnter={e => Object.assign(e.currentTarget.style, hover)}
-      onMouseLeave={e => Object.assign(e.currentTarget.style, base)}
+      className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border backdrop-blur-sm transition-colors disabled:opacity-40 cursor-pointer ${flex ? 'flex-1' : 'w-full'} ${colorClass[color]}`}
     >
       {children}
-    </button>
+    </motion.button>
   )
 }
 
+// ── Main component ────────────────────────────────────────────────────────────
 export default function StationCard({ station, session, onRefresh }: Props) {
-  const { user } = useAuthStore()
+  const { user }   = useAuthStore()
+  const pushUndo   = useUndoStore(s => s.push)
+
   const [elapsed, setElapsed]     = useState(() => session ? computeElapsed(session) : 0)
   const [showStart, setShowStart] = useState(false)
   const [showEnd, setShowEnd]     = useState(false)
   const [loading, setLoading]     = useState(false)
+  const [hovered, setHovered]     = useState(false)
 
   const warnedRef      = useRef(false)
   const expiredRef     = useRef(false)
@@ -111,10 +106,9 @@ export default function StationCard({ station, session, onRefresh }: Props) {
       const e = computeElapsed(session)
       setElapsed(e)
       if (session.type === 'temps' && session.prepaid_minutes) {
-        const total     = session.prepaid_minutes * 60
-        const remaining = total - e
-        if (remaining <= 0 && !expiredRef.current)       { expiredRef.current = true; beepEnd(); onRefresh() }
-        else if (remaining <= 300 && !warnedRef.current) { warnedRef.current = true; beepWarning() }
+        const remaining = session.prepaid_minutes * 60 - e
+        if (remaining <= 0 && !expiredRef.current)       { expiredRef.current = true;  beepEnd();     onRefresh() }
+        else if (remaining <= 300 && !warnedRef.current) { warnedRef.current  = true;  beepWarning()             }
       }
       if (e >= LONG_SESSION_THRESHOLD && !longSessionRef.current) { longSessionRef.current = true; beepLong() }
     }
@@ -129,9 +123,52 @@ export default function StationCard({ station, session, onRefresh }: Props) {
     longSessionRef.current = false
   }, [session?.id])
 
-  const handlePause    = async () => { setLoading(true); await window.playdesk.sessions.pause(session!.id);    await onRefresh(); setLoading(false) }
-  const handleResume   = async () => { setLoading(true); await window.playdesk.sessions.resume(session!.id);   await onRefresh(); setLoading(false) }
-  const handleAddMatch = async () => { setLoading(true); await window.playdesk.sessions.addMatch(session!.id); await onRefresh(); setLoading(false) }
+  const handlePause  = async () => { setLoading(true); await window.playdesk.sessions.pause(session!.id);  await onRefresh(); setLoading(false) }
+  const handleResume = async () => { setLoading(true); await window.playdesk.sessions.resume(session!.id); await onRefresh(); setLoading(false) }
+
+  const handleAddMatch = async () => {
+    if (!session) return
+    const previousCount = session.match_count ?? 0
+    setLoading(true)
+    const res = await window.playdesk.sessions.addMatch(session.id)
+    await onRefresh()
+    setLoading(false)
+    if (res.success) {
+      pushUndo({
+        label:       `Match ajouté · ${station.name}`,
+        description: `Match #${res.matchCount} → annuler`,
+        timeoutMs:   10000,
+        onUndo: async () => {
+          const undoRes = await window.playdesk.sessions.undoAddMatch(session.id, previousCount)
+          if (undoRes.success) await onRefresh()
+          else console.warn('Undo addMatch failed:', undoRes.error)
+        },
+      })
+    }
+  }
+
+  // Timer display
+  const timerValue = session?.type === 'temps' && tempsInfo
+    ? formatTime(tempsInfo.remaining)
+    : formatTime(elapsed)
+
+  // Use Tailwind class names for timer color instead of inline style
+  const timerClass = tempsInfo?.isExpired
+    ? 'text-red-500 dark:text-red-400'
+    : tempsInfo?.isWarning
+    ? 'text-amber-500 dark:text-amber-400'
+    : 'text-foreground'
+
+  // Progress bar color class
+  const progressClass = tempsInfo?.isExpired
+    ? 'bg-red-500 dark:bg-red-400'
+    : tempsInfo?.isWarning
+    ? 'bg-amber-500 dark:bg-amber-400'
+    : 'bg-green-500 dark:bg-green-400'
+
+  const progressWidth = session?.prepaid_minutes
+    ? Math.max(0, 100 - (elapsed / (session.prepaid_minutes * 60)) * 100)
+    : 0
 
   const sessionTypeLabel = session
     ? session.type === 'match' ? `Match · ${session.match_duration} min`
@@ -139,75 +176,130 @@ export default function StationCard({ station, session, onRefresh }: Props) {
     : 'Jeu Libre'
     : null
 
+  // Controller filter — in dark mode libre/pause images need brightness boost, not cut
+  // light mode: dim slightly for libre/pause; active = full
+  const controllerFilter = (() => {
+    if (hovered && session)  return 'brightness(0.35) blur(4px) saturate(0.2)'
+    if (status === 'libre')  return 'brightness(0.65) saturate(0)'
+    if (status === 'pause')  return 'brightness(0.55) saturate(0.4)'
+    return 'brightness(1) saturate(1)'
+  })()
+
+  // Image area bg — subtle contrast from card in both modes
+  const imgAreaClass = 'bg-muted/40 dark:bg-muted/20'
+
   return (
     <>
       <motion.div
+        className={`glow-card relative flex flex-col overflow-hidden rounded-xl border border-border bg-card ${glowByStatus[status]}`}
         whileHover={{ y: -2 }}
         transition={{ duration: 0.15 }}
-        className={`glow-card relative flex flex-col overflow-hidden ${glowByStatus[status]}`}
+        onHoverStart={() => setHovered(true)}
+        onHoverEnd={() => setHovered(false)}
       >
-        {/* PS5 image block — clickable when libre to start session */}
+        {/* ── Controller image area (fixed height) ── */}
         <div
-          className="relative flex items-center justify-center overflow-hidden py-16"
+          className={`relative flex items-center justify-center overflow-hidden h-52 ${imgAreaClass} ${!session ? 'cursor-pointer' : 'cursor-default'}`}
           onClick={!session ? () => setShowStart(true) : undefined}
-          style={{
-            height:       250,
-            background:   'var(--background)',
-            borderBottom: '1px solid var(--border)',
-            cursor:       !session ? 'pointer' : 'default',
-          }}
         >
-          <img
+          {/* Controller image */}
+          <motion.img
             src={ps5Img}
             alt={station.name}
-            style={{
-              height:     '250px',
-              width:      'auto',
-              objectFit:  'contain',
-              filter:     status === 'libre'
-                ? 'brightness(0.65) saturate(0)'
-                : status === 'pause'
-                  ? 'brightness(0.45) saturate(0.4)'
-                  : 'brightness(1)',
-              transition: 'filter 0.3s ease',
-            }}
+            className="h-72 w-auto object-contain select-none"
+            animate={{ filter: controllerFilter }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
           />
 
-
-          {/* Ghost number watermark */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <span
-              style={{
-                fontSize:      '72px',
-                fontWeight:    900,
-                fontFamily:    'monospace',
-                color:         'rgba(255,255,255,0.05)',
-                letterSpacing: '-4px',
-                userSelect:    'none',
-                lineHeight:    1,
-              }}
-            >
+          {/* Ghost station number — visible in both modes */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+            <span className="text-[80px] font-black font-mono text-foreground/[0.04] leading-none tracking-[-4px]">
               {station.name.match(/\d+(?!.*\d)/)?.[0] ?? '?'}
             </span>
           </div>
+
+          {/* ── Hover action overlay (session active) ── */}
+          <AnimatePresence>
+            {hovered && session && (
+              <motion.div
+                className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+              >
+                {session.status === 'active' && (
+                  <>
+                    {session.type === 'match' && (
+                      <HoverBtn onClick={handleAddMatch} disabled={loading} color="default" delay={0}>
+                        <Plus className="w-3.5 h-3.5" />
+                        Ajouter un match
+                      </HoverBtn>
+                    )}
+                    <div className="flex gap-2 w-full">
+                      <HoverBtn onClick={handlePause} disabled={loading} color="amber" delay={0.03} flex>
+                        <Pause className="w-3.5 h-3.5" />
+                        Pause
+                      </HoverBtn>
+                      <HoverBtn onClick={() => setShowEnd(true)} disabled={loading} color="red" delay={0.06} flex>
+                        <Square className="w-3.5 h-3.5" />
+                        Terminer
+                      </HoverBtn>
+                    </div>
+                  </>
+                )}
+
+                {session.status === 'paused' && (
+                  <div className="flex gap-2 w-full">
+                    <HoverBtn onClick={handleResume} disabled={loading} color="green" delay={0} flex>
+                      <Play className="w-3.5 h-3.5" />
+                      Reprendre
+                    </HoverBtn>
+                    <HoverBtn onClick={() => setShowEnd(true)} disabled={loading} color="red" delay={0.03} flex>
+                      <Square className="w-3.5 h-3.5" />
+                      Terminer
+                    </HoverBtn>
+                  </div>
+                )}
+
+                {status === 'expired' && (
+                  <HoverBtn onClick={() => setShowEnd(true)} disabled={loading} color="red" delay={0}>
+                    Clôturer la session
+                  </HoverBtn>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ── Empty hover hint ── */}
+          <AnimatePresence>
+            {!session && hovered && (
+              <motion.div
+                className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Cliquer pour démarrer
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        <div className="p-4 flex flex-col gap-3.5 flex-1">
+        {/* ── Bottom info strip ── */}
+        <div className="shrink-0 border-t border-border px-3.5 pt-2.5 pb-3 bg-card flex flex-col gap-2 min-h-24">
 
-          {/* Header */}
+          {/* Name + badge */}
           <div className="flex items-center justify-between">
             <div>
-              <span
-                className="font-semibold text-sm tracking-wide"
-                style={{ color: 'var(--foreground)' }}
-              >
+              <span className="font-semibold text-sm text-foreground tracking-wide leading-none">
                 {station.name}
               </span>
               {sessionTypeLabel && (
-                <p
-                  className="text-[10px] uppercase tracking-widest mt-0.5"
-                  style={{ color: 'var(--muted-foreground)' }}
-                >
+                <p className="text-[9px] uppercase tracking-widest mt-0.5 text-muted-foreground leading-none">
                   {sessionTypeLabel}
                 </p>
               )}
@@ -215,166 +307,89 @@ export default function StationCard({ station, session, onRefresh }: Props) {
             <StationBadge status={status} />
           </div>
 
-          {session ? (
-            <>
-              {/* Timer block */}
-              <div
-                className="rounded-lg px-3 py-3.5 text-center"
-                style={{
-                  background: 'var(--background)',
-                  border: '1px solid var(--border)',
-                }}
-              >
-                {session.type === 'temps' && tempsInfo ? (
-                  <>
-                    <p
-                      className="text-[9px] font-semibold uppercase tracking-[0.2em] mb-2"
-                      style={{
-                        color: tempsInfo.isExpired ? '#ef4444'
-                          : tempsInfo.isWarning ? '#f59e0b'
-                          : 'var(--muted-foreground)',
-                      }}
-                    >
-                      {tempsInfo.isExpired ? 'TEMPS ÉCOULÉ' : tempsInfo.isWarning ? '< 5 MIN' : 'Restant'}
-                    </p>
-                    <p
-                      className="text-3xl font-mono font-bold tracking-tight tabular-nums"
-                      style={{
-                        color: tempsInfo.isExpired ? '#ef4444'
-                          : tempsInfo.isWarning ? '#f59e0b'
-                          : 'var(--foreground)',
-                      }}
-                    >
-                      {formatTime(tempsInfo.remaining)}
-                    </p>
-                    <div className="progress-track mt-3">
-                      <div
-                        className="progress-fill"
-                        style={{
-                          width: `${Math.max(0, 100 - (elapsed / ((session.prepaid_minutes ?? 60) * 60)) * 100)}%`,
-                          background: tempsInfo.isExpired ? '#ef4444'
-                            : tempsInfo.isWarning ? '#f59e0b'
-                            : '#4ade80',
-                        }}
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <p
-                      className="text-[9px] uppercase tracking-[0.2em] mb-2"
-                      style={{ color: 'var(--muted-foreground)' }}
-                    >
-                      {session.status === 'paused' ? 'En pause' : 'Durée'}
-                    </p>
-                    <p
-                      className="text-3xl font-mono font-bold tracking-tight tabular-nums"
-                      style={{ color: 'var(--foreground)' }}
-                    >
-                      {formatTime(elapsed)}
-                    </p>
-                    {session.type === 'match' && (
-                      <p
-                        className="text-[10px] mt-1.5"
-                        style={{ color: 'var(--muted-foreground)' }}
-                      >
-                        {session.match_count} match{session.match_count !== 1 ? 's' : ''}
-                      </p>
-                    )}
-                  </>
-                )}
-              </div>
-
-              {/* Amount row */}
-              <div className="flex items-center justify-between px-0.5">
-                <span
-                  className="text-[10px] uppercase tracking-[0.15em]"
-                  style={{ color: 'var(--muted-foreground)' }}
+          {/* Timer + amount */}
+          <div className="flex items-center justify-between min-h-7">
+            <AnimatePresence mode="wait">
+              {session ? (
+                <motion.div
+                  key="timer"
+                  className="flex items-baseline gap-1.5"
+                  initial={{ opacity: 0, y: 3 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -3 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  Total estimé
-                </span>
-                <span
-                  className="font-bold text-base font-mono"
-                  style={{ color: 'var(--foreground)' }}
+                  <span className={`font-mono font-bold text-xl tabular-nums tracking-tight leading-none ${timerClass}`}>
+                    {timerValue}
+                  </span>
+                  {session.type === 'match' && (
+                    <span className="text-[10px] text-muted-foreground">
+                      · {session.match_count} match{session.match_count !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {session.status === 'paused' && (
+                    <span className="text-[9px] text-amber-500 dark:text-amber-400 uppercase tracking-wide font-semibold">pause</span>
+                  )}
+                </motion.div>
+              ) : (
+                <motion.span
+                  key="empty"
+                  className="text-sm text-muted-foreground/50"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  {formatMAD(amount)}
-                </span>
-              </div>
+                  —
+                </motion.span>
+              )}
+            </AnimatePresence>
 
-              {/* Actions */}
-              <div className="flex flex-col gap-1.5">
-                {session.status === 'active' && (
-                  <>
-                    {session.type === 'match' && (
-                      <ActionButton onClick={handleAddMatch} disabled={loading}>
-                        <Plus className="w-3.5 h-3.5" />
-                        Ajouter un match
-                      </ActionButton>
-                    )}
-                    <div className="flex gap-1.5">
-                      <ActionButton onClick={handlePause} disabled={loading} variant="amber">
-                        <Pause className="w-3.5 h-3.5" />
-                        Pause
-                      </ActionButton>
-                      <ActionButton onClick={() => setShowEnd(true)} disabled={loading} variant="red">
-                        <Square className="w-3.5 h-3.5" />
-                        Terminer
-                      </ActionButton>
-                    </div>
-                  </>
-                )}
+            {session && (
+              <span className="font-mono font-bold text-sm text-foreground tabular-nums">
+                {formatMAD(amount)}
+              </span>
+            )}
+          </div>
 
-                {session.status === 'paused' && (
-                  <div className="flex gap-1.5">
-                    <ActionButton onClick={handleResume} disabled={loading} variant="green">
-                      <Play className="w-3.5 h-3.5" />
-                      Reprendre
-                    </ActionButton>
-                    <ActionButton onClick={() => setShowEnd(true)} disabled={loading} variant="red">
-                      <Square className="w-3.5 h-3.5" />
-                      Terminer
-                    </ActionButton>
-                  </div>
-                )}
-
-                {status === 'expired' && (
-                  <ActionButton onClick={() => setShowEnd(true)} disabled={loading} variant="red">
-                    Clôturer la session
-                  </ActionButton>
-                )}
-              </div>
-            </>
-          ) : (
-            /* Empty state — just a small hint, image above is the click target */
-            <div className="flex-1 flex items-center justify-center">
-              <p
-                className="text-[10px] uppercase tracking-widest"
-                style={{ color: 'var(--muted-foreground)', opacity: 0.5 }}
-              >
-                Cliquer pour démarrer
-              </p>
+          {/* Temps progress bar */}
+          {session?.type === 'temps' && session.prepaid_minutes && (
+            <div className="h-[3px] rounded-full bg-border overflow-hidden">
+              <motion.div
+                className={`h-full rounded-full ${progressClass}`}
+                animate={{ width: `${progressWidth}%` }}
+                transition={{ duration: 1, ease: 'linear' }}
+              />
             </div>
           )}
         </div>
       </motion.div>
 
-      {showStart && (
-        <StartSessionModal
-          station={station}
-          managerId={user!.id}
-          onClose={() => setShowStart(false)}
-          onStarted={onRefresh}
-        />
-      )}
-      {showEnd && session && (
-        <EndSessionModal
-          session={session}
-          elapsed={elapsed}
-          amount={amount}
-          onClose={() => setShowEnd(false)}
-          onEnded={onRefresh}
-        />
-      )}
+      {/* Modals */}
+      <AnimatePresence>
+        {showStart && (
+          <StartSessionModal
+            key="start-modal"
+            station={station}
+            managerId={user!.id}
+            onClose={() => setShowStart(false)}
+            onStarted={onRefresh}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showEnd && session && (
+          <EndSessionModal
+            key="end-modal"
+            session={session}
+            elapsed={elapsed}
+            amount={amount}
+            onClose={() => setShowEnd(false)}
+            onEnded={onRefresh}
+          />
+        )}
+      </AnimatePresence>
     </>
   )
 }

@@ -14,14 +14,16 @@ interface Window {
     }
     license: {
       status:     () => Promise<{
-        activated:    boolean
-        activatedAt?: string
-        trial?:       boolean
-        expired?:     boolean
-        trialEndsAt?: number
-        daysLeft?:    number
+        activated:             boolean
+        activatedAt?:          string
+        subscriptionExpiresAt?: string
+        subscriptionExpired?:  boolean
+        trial?:                boolean
+        expired?:              boolean
+        trialEndsAt?:          number
+        daysLeft?:             number
       }>
-      activate:   (key: string) => Promise<{ success: boolean; error?: string }>
+      activate:   (key: string) => Promise<{ success: boolean; expiresAt?: string; error?: string }>
       startTrial: () => Promise<{ success: boolean; error?: string }>
     }
     stations: {
@@ -31,13 +33,15 @@ interface Window {
       remove: (id: number) => Promise<{ success: boolean }>
     }
     sessions: {
-      start:    (data: object) => Promise<{ success: boolean; id?: number }>
-      end:      (id: number, note?: string) => Promise<{ success: boolean; total?: number; elapsed?: number }>
-      pause:    (id: number) => Promise<{ success: boolean }>
-      resume:   (id: number) => Promise<{ success: boolean }>
-      addMatch: (id: number) => Promise<{ success: boolean; matchCount?: number }>
-      active:   () => Promise<any[]>
-      history:  (filters: object) => Promise<any[]>
+      start:        (data: object) => Promise<{ success: boolean; id?: number }>
+      end:          (id: number, note?: string) => Promise<{ success: boolean; total?: number; elapsed?: number }>
+      undoEnd:      (id: number) => Promise<{ success: boolean; error?: string }>
+      undoAddMatch: (id: number, previousCount: number) => Promise<{ success: boolean; matchCount?: number; error?: string }>
+      pause:        (id: number) => Promise<{ success: boolean }>
+      resume:       (id: number) => Promise<{ success: boolean }>
+      addMatch:     (id: number) => Promise<{ success: boolean; matchCount?: number }>
+      active:       () => Promise<any[]>
+      history:      (filters: object) => Promise<any[]>
     }
     dashboard: {
       summary:         (date: string) => Promise<any>

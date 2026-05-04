@@ -1,32 +1,67 @@
 import { useEffect, useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
-import { UserPlus, Key, PowerOff, Power, Check, X, AlertTriangle, Trash2 } from 'lucide-react'
+import { UserPlus, Key, PowerOff, Power, Check, X, Trash2 } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+
+type ConfirmTarget = { id: number; username: string } | null
 
 export default function UsersSettings() {
   const { user: currentUser } = useAuthStore()
+
   const [users, setUsers]           = useState<any[]>([])
-  const [showForm, setShowForm]     = useState(false)
+  const [loading, setLoading]       = useState(false)
+
+  // Create dialog
+  const [createOpen, setCreateOpen] = useState(false)
   const [form, setForm]             = useState({ username: '', password: '', role: 'manager' })
   const [formError, setFormError]   = useState('')
+
+  // Change password inline
   const [editId, setEditId]         = useState<number | null>(null)
   const [editPass, setEditPass]     = useState('')
   const [passError, setPassError]   = useState('')
-  const [confirmDisable, setConfirmDisable] = useState<number | null>(null)
-  const [confirmEnable, setConfirmEnable]   = useState<number | null>(null)
-  const [confirmDelete, setConfirmDelete]   = useState<number | null>(null)
-  const [loading, setLoading]       = useState(false)
+
+  // Confirmation dialogs
+  const [confirmDisable, setConfirmDisable] = useState<ConfirmTarget>(null)
+  const [confirmEnable, setConfirmEnable]   = useState<ConfirmTarget>(null)
+  const [confirmDelete, setConfirmDelete]   = useState<ConfirmTarget>(null)
 
   const load = async () => { setUsers(await window.playdesk.users.list()) }
   useEffect(() => { load() }, [])
 
   const handleCreate = async () => {
     setFormError('')
-    if (!form.username.trim() || !form.password.trim()) { setFormError('Tous les champs sont requis'); return }
-    if (form.password.length < 6) { setFormError('Mot de passe : 6 caractères minimum'); return }
+    if (!form.username.trim() || !form.password.trim()) {
+      setFormError('Tous les champs sont requis')
+      return
+    }
+    if (form.password.length < 6) {
+      setFormError('Mot de passe : 6 caractères minimum')
+      return
+    }
     setLoading(true)
     const res = await window.playdesk.users.create(form)
     if (res.success) {
-      setShowForm(false)
+      setCreateOpen(false)
       setForm({ username: '', password: '', role: 'manager' })
       await load()
     } else {
@@ -47,191 +82,90 @@ export default function UsersSettings() {
     setLoading(false)
   }
 
-  const handleDisable = async (id: number) => {
+  const handleDisable = async () => {
+    if (!confirmDisable) return
     setLoading(true)
-    await window.playdesk.users.disable(id)
+    await window.playdesk.users.disable(confirmDisable.id)
     setConfirmDisable(null)
     await load()
     setLoading(false)
   }
 
-  // FIX: use dedicated enable() instead of update({ active: 1 })
-  const handleEnable = async (id: number) => {
+  const handleEnable = async () => {
+    if (!confirmEnable) return
     setLoading(true)
-    await window.playdesk.users.enable(id)
+    await window.playdesk.users.enable(confirmEnable.id)
     setConfirmEnable(null)
     await load()
     setLoading(false)
   }
 
-  // NEW: permanent delete
-  const handleDelete = async (id: number) => {
+  const handleDelete = async () => {
+    if (!confirmDelete) return
     setLoading(true)
-    await window.playdesk.users.delete(id)
+    await window.playdesk.users.delete(confirmDelete.id)
     setConfirmDelete(null)
     await load()
     setLoading(false)
   }
-
-  const clearConfirms = () => {
-    setConfirmDisable(null)
-    setConfirmEnable(null)
-    setConfirmDelete(null)
-  }
-
-  const rolePill: Record<string, { bg: string; color: string }> = {
-    admin:   { bg: 'var(--neon-mid)',      color: 'var(--neon)' },
-    manager: { bg: 'rgba(74,222,128,0.1)', color: '#4ade80' },
-  }
-
-  const iconBtn = (color: string, bg: string) => ({
-    color,
-    background: bg,
-    border: 'none',
-    width: '26px',
-    height: '26px',
-    borderRadius: '7px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    transition: 'background 0.12s ease',
-    flexShrink: 0,
-  } as React.CSSProperties)
 
   return (
     <div className="w-full">
+      {/* Header */}
       <div className="flex items-center justify-between mb-5">
-        <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
-          Gérez les accès au système.
-        </p>
-        <button
-          onClick={() => { setShowForm(!showForm); setFormError('') }}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors"
-          style={{
-            background: showForm ? 'rgba(239,68,68,0.08)' : 'var(--neon-dim)',
-            color:      showForm ? '#ef4444' : 'var(--neon)',
-            border:     showForm ? '1px solid rgba(239,68,68,0.2)' : '1px solid rgba(99,102,241,0.2)',
-          }}
+        <p className="text-sm text-muted-foreground">Gérez les accès au système.</p>
+        <Button
+          size="sm"
+          variant="outline"
+          className="gap-1.5 text-xs"
+          onClick={() => { setCreateOpen(true); setFormError('') }}
         >
           <UserPlus className="w-3.5 h-3.5" />
-          {showForm ? 'Annuler' : 'Nouveau manager'}
-        </button>
+          Nouveau manager
+        </Button>
       </div>
 
-      {/* ── Create form ── */}
-      {showForm && (
-        <div
-          className="rounded-xl p-4 mb-4 flex flex-col gap-3"
-          style={{ background: 'var(--muted)', border: '1px solid var(--border)' }}
-        >
-          <h4 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted-foreground)' }}>
-            Créer un compte
-          </h4>
-          {formError && (
-            <p className="text-xs" style={{ color: '#ef4444' }}>{formError}</p>
-          )}
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              value={form.username}
-              onChange={e => setForm({ ...form, username: e.target.value })}
-              placeholder="Nom d'utilisateur"
-              className="settings-input"
-            />
-            <input
-              value={form.password}
-              onChange={e => setForm({ ...form, password: e.target.value })}
-              type="password"
-              placeholder="Mot de passe (6+ car.)"
-              className="settings-input"
-            />
-          </div>
-          <div className="flex gap-2 items-center">
-            <select
-              value={form.role}
-              onChange={e => setForm({ ...form, role: e.target.value })}
-              className="settings-input"
-            >
-              <option value="manager">Manager</option>
-              <option value="admin">Admin</option>
-            </select>
-            <button
-              onClick={handleCreate}
-              disabled={loading}
-              className="flex-1 py-2 text-xs font-semibold rounded-lg transition-colors disabled:opacity-40"
-              style={{
-                background: 'var(--neon-dim)',
-                color: 'var(--neon)',
-                border: '1px solid rgba(99,102,241,0.2)',
-              }}
-            >
-              {loading ? 'Création...' : 'Créer le compte'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Users list ── */}
+      {/* Users list */}
       <div className="flex flex-col gap-2">
         {users.map(u => {
-          const isConfirmingDisable = confirmDisable === u.id
-          const isConfirmingEnable  = confirmEnable  === u.id
-          const isConfirmingDelete  = confirmDelete  === u.id
-          const isEditingPass       = editId === u.id
-          const anyConfirm          = isConfirmingDisable || isConfirmingEnable || isConfirmingDelete
+          const isEditingPass = editId === u.id
 
           return (
             <div
               key={u.id}
-              className="flex flex-col rounded-xl overflow-hidden"
-              style={{
-                background: 'var(--muted)',
-                border: '1px solid var(--border)',
-                opacity: u.active ? 1 : 0.65,
-              }}
+              className={`flex flex-col rounded-xl border border-border bg-muted overflow-hidden transition-opacity ${!u.active ? 'opacity-60' : ''}`}
             >
               {/* Main row */}
-              <div className="px-4 py-2.5 flex items-center gap-3">
-                {/* Avatar */}
-                <div
-                  className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold shrink-0"
-                  style={{ background: 'var(--card)', color: 'var(--muted-foreground)', border: '1px solid var(--border)' }}
-                >
-                  {u.username[0].toUpperCase()}
+              <div className="flex items-center gap-3 px-4 py-2.5">
+                {/* Avatar initial */}
+                <div className="w-7 h-7 rounded-lg bg-muted-foreground/15 flex items-center justify-center shrink-0">
+                  <span className="text-xs font-bold text-foreground uppercase">
+                    {u.username?.[0] ?? '?'}
+                  </span>
                 </div>
 
-                <span className="text-sm font-medium flex-1 truncate" style={{ color: 'var(--foreground)' }}>
+                {/* Username */}
+                <span className="flex-1 text-sm font-medium text-foreground truncate">
                   {u.username}
                 </span>
 
                 {/* Role pill */}
-                <span
-                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
-                  style={{
-                    background: (rolePill[u.role] ?? { bg: 'var(--border)' }).bg,
-                    color:      (rolePill[u.role] ?? { color: 'var(--muted-foreground)' }).color,
-                  }}
-                >
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded tracking-wide ${
+                  u.role === 'admin'
+                    ? 'bg-primary/10 text-primary border border-primary/20'
+                    : 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20'
+                }`}>
                   {u.role}
                 </span>
 
-                {u.id === currentUser?.id && (
-                  <span className="text-[10px] shrink-0" style={{ color: 'var(--muted-foreground)' }}>
-                    (vous)
-                  </span>
-                )}
-
-                {/* Disabled badge */}
+                {/* Inactive badge */}
                 {!u.active && (
-                  <span
-                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
-                    style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}
-                  >
+                  <span className="text-[9px] uppercase tracking-widest text-muted-foreground border border-border rounded px-1.5 py-0.5">
                     désactivé
                   </span>
                 )}
 
-                {/* Inline password edit */}
+                {/* Inline password editor */}
                 {isEditingPass ? (
                   <div className="flex gap-1.5 items-center">
                     <input
@@ -239,176 +173,223 @@ export default function UsersSettings() {
                       onChange={e => { setEditPass(e.target.value); setPassError('') }}
                       type="password"
                       placeholder="Nouveau mot de passe"
-                      className="settings-input text-xs py-1 w-36"
-                      style={{ borderColor: passError ? '#ef4444' : 'var(--neon)' }}
+                      className={`settings-input text-xs py-1 w-36 ${passError ? 'border-red-500' : 'border-primary'}`}
                       autoFocus
                     />
-                    <button
-                      style={iconBtn('#4ade80', 'rgba(74,222,128,0.1)')}
+                    <IconBtn
                       onClick={() => handleChangePassword(u.id)}
-                      disabled={loading}
+                      className="text-green-500 dark:text-green-400 bg-green-500/10 hover:bg-green-500/20"
+                      title="Confirmer"
                     >
                       <Check className="w-3 h-3" />
-                    </button>
-                    <button
-                      style={iconBtn('var(--muted-foreground)', 'var(--border)')}
+                    </IconBtn>
+                    <IconBtn
                       onClick={() => { setEditId(null); setEditPass(''); setPassError('') }}
+                      className="text-muted-foreground bg-border/60 hover:bg-border"
+                      title="Annuler"
                     >
                       <X className="w-3 h-3" />
-                    </button>
+                    </IconBtn>
                   </div>
                 ) : (
-                  /* Normal action buttons — hidden while a confirm strip is open */
-                  !anyConfirm && (
-                    <div className="flex gap-1">
-                      {/* Change password */}
-                      <button
-                        style={iconBtn('var(--muted-foreground)', 'transparent')}
-                        title="Changer le mot de passe"
-                        onClick={() => { setEditId(u.id); setEditPass(''); setPassError('') }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'var(--border)'; e.currentTarget.style.color = 'var(--foreground)' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--muted-foreground)' }}
+                  /* Action buttons */
+                  <div className="flex gap-1">
+                    <IconBtn
+                      onClick={() => { setEditId(u.id); setEditPass(''); setPassError('') }}
+                      className="text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10"
+                      title="Changer le mot de passe"
+                    >
+                      <Key className="w-3 h-3" />
+                    </IconBtn>
+
+                    {!!u.active && u.id !== currentUser?.id && (
+                      <IconBtn
+                        onClick={() => setConfirmDisable({ id: u.id, username: u.username })}
+                        className="text-muted-foreground hover:text-red-500 dark:hover:text-red-400 hover:bg-red-500/10"
+                        title="Désactiver"
                       >
-                        <Key className="w-3 h-3" />
-                      </button>
+                        <PowerOff className="w-3 h-3" />
+                      </IconBtn>
+                    )}
 
-                      {/* Disable — active non-self users only */}
-                      {!!u.active && u.id !== currentUser?.id && (
-                        <button
-                          style={iconBtn('var(--muted-foreground)', 'transparent')}
-                          title="Désactiver"
-                          onClick={() => { clearConfirms(); setConfirmDisable(u.id) }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.color = '#ef4444' }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--muted-foreground)' }}
-                        >
-                          <PowerOff className="w-3 h-3" />
-                        </button>
-                      )}
+                    {!u.active && (
+                      <IconBtn
+                        onClick={() => setConfirmEnable({ id: u.id, username: u.username })}
+                        className="text-green-500 dark:text-green-400 bg-green-500/8 hover:bg-green-500/15"
+                        title="Réactiver"
+                      >
+                        <Power className="w-3 h-3" />
+                      </IconBtn>
+                    )}
 
-                      {/* Reactivate — inactive users only */}
-                      {!u.active && (
-                        <button
-                          style={iconBtn('#4ade80', 'rgba(74,222,128,0.08)')}
-                          title="Réactiver"
-                          onClick={() => { clearConfirms(); setConfirmEnable(u.id) }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(74,222,128,0.18)' }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(74,222,128,0.08)' }}
-                        >
-                          <Power className="w-3 h-3" />
-                        </button>
-                      )}
-
-                      {/* Delete — non-self users only */}
-                      {u.id !== currentUser?.id && (
-                        <button
-                          style={iconBtn('var(--muted-foreground)', 'transparent')}
-                          title="Supprimer définitivement"
-                          onClick={() => { clearConfirms(); setConfirmDelete(u.id) }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.color = '#ef4444' }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--muted-foreground)' }}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
-                  )
+                    {u.id !== currentUser?.id && (
+                      <IconBtn
+                        onClick={() => setConfirmDelete({ id: u.id, username: u.username })}
+                        className="text-muted-foreground hover:text-red-500 dark:hover:text-red-400 hover:bg-red-500/10"
+                        title="Supprimer définitivement"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </IconBtn>
+                    )}
+                  </div>
                 )}
               </div>
 
-              {/* Password error — attached under the row */}
+              {/* Password error */}
               {isEditingPass && passError && (
-                <div className="px-4 pb-2.5">
-                  <p className="text-[11px]" style={{ color: '#ef4444' }}>{passError}</p>
-                </div>
-              )}
-
-              {/* ── Disable confirm strip ── */}
-              {isConfirmingDisable && (
-                <div
-                  className="px-4 py-2.5 flex items-center gap-3"
-                  style={{ borderTop: '1px solid var(--border)', background: 'rgba(239,68,68,0.04)' }}
-                >
-                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" style={{ color: '#ef4444' }} />
-                  <p className="text-xs flex-1" style={{ color: 'var(--muted-foreground)' }}>
-                    Désactiver <strong style={{ color: 'var(--foreground)' }}>{u.username}</strong> ?
-                  </p>
-                  <button
-                    onClick={() => setConfirmDisable(null)}
-                    className="px-2.5 py-1 text-xs rounded-md"
-                    style={{ background: 'var(--border)', color: 'var(--muted-foreground)' }}
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    onClick={() => handleDisable(u.id)}
-                    disabled={loading}
-                    className="px-2.5 py-1 text-xs font-semibold rounded-md disabled:opacity-40"
-                    style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
-                  >
-                    Désactiver
-                  </button>
-                </div>
-              )}
-
-              {/* ── Enable confirm strip ── */}
-              {isConfirmingEnable && (
-                <div
-                  className="px-4 py-2.5 flex items-center gap-3"
-                  style={{ borderTop: '1px solid var(--border)', background: 'rgba(74,222,128,0.04)' }}
-                >
-                  <Power className="w-3.5 h-3.5 shrink-0" style={{ color: '#4ade80' }} />
-                  <p className="text-xs flex-1" style={{ color: 'var(--muted-foreground)' }}>
-                    Réactiver <strong style={{ color: 'var(--foreground)' }}>{u.username}</strong> ?
-                  </p>
-                  <button
-                    onClick={() => setConfirmEnable(null)}
-                    className="px-2.5 py-1 text-xs rounded-md"
-                    style={{ background: 'var(--border)', color: 'var(--muted-foreground)' }}
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    onClick={() => handleEnable(u.id)}
-                    disabled={loading}
-                    className="px-2.5 py-1 text-xs font-semibold rounded-md disabled:opacity-40"
-                    style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)' }}
-                  >
-                    Réactiver
-                  </button>
-                </div>
-              )}
-
-              {/* ── Delete confirm strip ── */}
-              {isConfirmingDelete && (
-                <div
-                  className="px-4 py-2.5 flex items-center gap-3"
-                  style={{ borderTop: '1px solid var(--border)', background: 'rgba(239,68,68,0.04)' }}
-                >
-                  <Trash2 className="w-3.5 h-3.5 shrink-0" style={{ color: '#ef4444' }} />
-                  <p className="text-xs flex-1" style={{ color: 'var(--muted-foreground)' }}>
-                    Supprimer <strong style={{ color: 'var(--foreground)' }}>{u.username}</strong> définitivement ?
-                  </p>
-                  <button
-                    onClick={() => setConfirmDelete(null)}
-                    className="px-2.5 py-1 text-xs rounded-md"
-                    style={{ background: 'var(--border)', color: 'var(--muted-foreground)' }}
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    onClick={() => handleDelete(u.id)}
-                    disabled={loading}
-                    className="px-2.5 py-1 text-xs font-semibold rounded-md disabled:opacity-40"
-                    style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
-                  >
-                    Supprimer
-                  </button>
-                </div>
+                <p className="px-4 pb-2 text-[11px] text-red-500 dark:text-red-400">{passError}</p>
               )}
             </div>
           )
         })}
+
+        {users.length === 0 && (
+          <div className="text-center py-10 rounded-xl text-sm text-muted-foreground border border-dashed border-border">
+            Aucun utilisateur
+          </div>
+        )}
       </div>
+
+      {/* ── Create user dialog ── */}
+      <Dialog open={createOpen} onOpenChange={open => { setCreateOpen(open); if (!open) { setForm({ username: '', password: '', role: 'manager' }); setFormError('') } }}>
+        <DialogContent className="w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Créer un compte</DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-3 py-2">
+            {formError && (
+              <p className="text-xs text-red-500 dark:text-red-400">{formError}</p>
+            )}
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs text-muted-foreground">Nom d'utilisateur</Label>
+              <Input
+                value={form.username}
+                onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
+                placeholder="ex: caissier1"
+                autoFocus
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs text-muted-foreground">Mot de passe</Label>
+              <Input
+                value={form.password}
+                onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                type="password"
+                placeholder="6 caractères minimum"
+                onKeyDown={e => e.key === 'Enter' && handleCreate()}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs text-muted-foreground">Rôle</Label>
+              <select
+                value={form.role}
+                onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
+                className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground outline-none focus:border-primary transition-colors"
+              >
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleCreate} disabled={loading}>
+              {loading ? 'Création...' : 'Créer le compte'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Disable confirm ── */}
+      <AlertDialog open={!!confirmDisable} onOpenChange={open => { if (!open) setConfirmDisable(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Désactiver le compte</AlertDialogTitle>
+            <AlertDialogDescription>
+              Voulez-vous désactiver <span className="font-semibold text-foreground">{confirmDisable?.username}</span> ?
+              Le compte ne pourra plus se connecter.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDisable}
+              disabled={loading}
+              className="bg-red-500 hover:bg-red-600 text-white dark:bg-red-500 dark:hover:bg-red-600"
+            >
+              Désactiver
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Enable confirm ── */}
+      <AlertDialog open={!!confirmEnable} onOpenChange={open => { if (!open) setConfirmEnable(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Réactiver le compte</AlertDialogTitle>
+            <AlertDialogDescription>
+              Réactiver <span className="font-semibold text-foreground">{confirmEnable?.username}</span> ?
+              Le compte pourra se reconnecter.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleEnable}
+              disabled={loading}
+              className="bg-green-500 hover:bg-green-600 text-white dark:bg-green-500 dark:hover:bg-green-600"
+            >
+              Réactiver
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Delete confirm ── */}
+      <AlertDialog open={!!confirmDelete} onOpenChange={open => { if (!open) setConfirmDelete(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer le compte</AlertDialogTitle>
+            <AlertDialogDescription>
+              Supprimer définitivement <span className="font-semibold text-foreground">{confirmDelete?.username}</span> ?
+              Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={loading}
+              className="bg-red-500 hover:bg-red-600 text-white dark:bg-red-500 dark:hover:bg-red-600"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  )
+}
+
+// ── Icon button helper ────────────────────────────────────────────────────────
+function IconBtn({ onClick, children, className, title }: {
+  onClick:   () => void
+  children:  React.ReactNode
+  className: string
+  title?:    string
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`w-[26px] h-[26px] rounded-md flex items-center justify-center shrink-0 transition-colors cursor-pointer ${className}`}
+    >
+      {children}
+    </button>
   )
 }

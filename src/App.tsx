@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore }    from './store/authStore'
 import { useLicenseStore } from './store/licenseStore'
 import ActivationPage from './pages/ActivationPage'
@@ -9,6 +9,7 @@ import DashboardPage  from './pages/DashboardPage'
 import SettingsPage   from './pages/SettingsPage'
 import TitleBar       from './components/layout/TitleBar'
 import Sidebar        from './components/layout/Sidebar'
+import UndoToastContainer from './components/common/undoToast'
 
 export type Page = 'caisse' | 'dashboard' | 'settings'
 
@@ -18,7 +19,6 @@ const pageVariants = {
   exit:    { opacity: 0, y: -4 },
 }
 
-/** Apply persisted theme before first render */
 function initTheme() {
   const saved = localStorage.getItem('playdesk_theme') ?? 'dark'
   const root  = document.documentElement
@@ -52,7 +52,6 @@ export default function App() {
           trialEndsAt: s.trialEndsAt ?? undefined,
         })
       } catch {
-        // Dev / error fallback — let through
         setStatus({ activated: true })
       }
       setLoading(false)
@@ -60,7 +59,6 @@ export default function App() {
     init()
   }, [])
 
-  // ── Loading spinner ──────────────────────────────────────────────────────────
   if (loading) return (
     <div
       className="h-screen flex items-center justify-center"
@@ -73,13 +71,10 @@ export default function App() {
     </div>
   )
 
-  // ── License gate ─────────────────────────────────────────────────────────────
-  // Block if: no activation AND (no trial started OR trial has expired)
   const canUse = activated || (trial && !expired)
   if (!canUse) return (
     <ActivationPage
       onActivated={() =>
-        // Re-fetch status after activation/trial start so the store updates
         window.playdesk.license.status().then(s =>
           setStatus({
             activated:   s.activated,
@@ -93,10 +88,8 @@ export default function App() {
     />
   )
 
-  // ── Auth gate ────────────────────────────────────────────────────────────────
   if (!user) return <LoginPage />
 
-  // ── Main app ─────────────────────────────────────────────────────────────────
   return (
     <div
       className="h-screen flex flex-col overflow-hidden"
@@ -123,6 +116,9 @@ export default function App() {
           </AnimatePresence>
         </main>
       </div>
+
+      {/* Undo toasts — rendered above everything, outside the scrollable main area */}
+      <UndoToastContainer />
     </div>
   )
 }

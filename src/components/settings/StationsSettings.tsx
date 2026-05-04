@@ -1,12 +1,23 @@
 import { useEffect, useState } from 'react'
 import { Plus, Pencil, Power, Trash2, Check, X } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 export default function StationsSettings() {
-  const [stations, setStations] = useState<any[]>([])
-  const [newName, setNewName]   = useState('')
-  const [editId, setEditId]     = useState<number | null>(null)
-  const [editName, setEditName] = useState('')
-  const [loading, setLoading]   = useState(false)
+  const [stations, setStations]         = useState<any[]>([])
+  const [newName, setNewName]           = useState('')
+  const [editId, setEditId]             = useState<number | null>(null)
+  const [editName, setEditName]         = useState('')
+  const [loading, setLoading]           = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null)
 
   const load = async () => { setStations(await window.playdesk.stations.list()) }
   useEffect(() => { load() }, [])
@@ -32,31 +43,16 @@ export default function StationsSettings() {
     await load()
   }
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Supprimer cette station ?')) return
-    await window.playdesk.stations.remove(id)
+  const handleDeleteConfirmed = async () => {
+    if (!deleteTarget) return
+    await window.playdesk.stations.remove(deleteTarget.id)
+    setDeleteTarget(null)
     await load()
   }
 
-  // Shared icon-button style
-  const iconBtn = (color: string, bg: string) => ({
-    color,
-    background: bg,
-    border: 'none',
-    width: '26px',
-    height: '26px',
-    borderRadius: '7px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    transition: 'opacity 0.15s ease',
-    flexShrink: 0,
-  } as React.CSSProperties)
-
   return (
     <div className="w-full">
-      <p className="text-sm mb-6" style={{ color: 'var(--muted-foreground)' }}>
+      <p className="text-sm text-muted-foreground mb-6">
         Gérez vos stations PS5. Les stations désactivées n'apparaissent pas en Caisse.
       </p>
 
@@ -72,12 +68,7 @@ export default function StationsSettings() {
         <button
           onClick={handleAdd}
           disabled={loading || !newName.trim()}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors disabled:opacity-40"
-          style={{
-            background: 'var(--neon-dim)',
-            color: 'var(--neon)',
-            border: '1px solid rgba(99,102,241,0.2)',
-          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors disabled:opacity-40 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15"
         >
           <Plus className="w-3.5 h-3.5" />
           Ajouter
@@ -89,20 +80,11 @@ export default function StationsSettings() {
         {stations.map(s => (
           <div
             key={s.id}
-            className="flex items-center gap-3 rounded-xl px-4 py-2.5 transition-all"
-            style={{
-              background: 'var(--muted)',
-              border: '1px solid var(--border)',
-              opacity: s.active ? 1 : 0.55,
-            }}
+            className={`flex items-center gap-3 rounded-xl px-4 py-2.5 border border-border bg-muted transition-all ${!s.active ? 'opacity-55' : ''}`}
           >
             {/* Status dot */}
             <div
-              className="w-2 h-2 rounded-full shrink-0"
-              style={{
-                background: s.active ? '#4ade80' : 'var(--muted-foreground)',
-                boxShadow: s.active ? '0 0 5px rgba(74,222,128,0.6)' : 'none',
-              }}
+              className={`w-2 h-2 rounded-full shrink-0 ${s.active ? 'bg-green-400 shadow-[0_0_5px_rgba(74,222,128,0.6)]' : 'bg-muted-foreground'}`}
             />
 
             {/* Name / edit input */}
@@ -114,12 +96,11 @@ export default function StationsSettings() {
                   if (e.key === 'Enter')  handleRename(s.id)
                   if (e.key === 'Escape') setEditId(null)
                 }}
-                className="settings-input flex-1 py-1 text-sm"
-                style={{ borderColor: 'var(--neon)' }}
+                className="settings-input flex-1 py-1 text-sm border-primary"
                 autoFocus
               />
             ) : (
-              <span className="flex-1 text-sm font-medium" style={{ color: 'var(--foreground)' }}>
+              <span className="flex-1 text-sm font-medium text-foreground">
                 {s.name}
               </span>
             )}
@@ -128,40 +109,47 @@ export default function StationsSettings() {
             <div className="flex gap-1">
               {editId === s.id ? (
                 <>
-                  <button style={iconBtn('#4ade80', 'rgba(74,222,128,0.1)')} onClick={() => handleRename(s.id)}>
+                  <IconBtn
+                    onClick={() => handleRename(s.id)}
+                    className="text-green-500 dark:text-green-400 bg-green-500/10 hover:bg-green-500/20"
+                    title="Confirmer"
+                  >
                     <Check className="w-3 h-3" />
-                  </button>
-                  <button style={iconBtn('var(--muted-foreground)', 'var(--border)')} onClick={() => setEditId(null)}>
+                  </IconBtn>
+                  <IconBtn
+                    onClick={() => setEditId(null)}
+                    className="text-muted-foreground bg-border/50 hover:bg-border"
+                    title="Annuler"
+                  >
                     <X className="w-3 h-3" />
-                  </button>
+                  </IconBtn>
                 </>
               ) : (
                 <>
-                  <button
-                    style={iconBtn('var(--muted-foreground)', 'transparent')}
-                    title="Renommer"
+                  <IconBtn
                     onClick={() => { setEditId(s.id); setEditName(s.name) }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--border)'; e.currentTarget.style.color = 'var(--foreground)' }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--muted-foreground)' }}
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10"
+                    title="Renommer"
                   >
                     <Pencil className="w-3 h-3" />
-                  </button>
-                  <button
-                    style={iconBtn(s.active ? '#fbbf24' : '#4ade80', s.active ? 'rgba(251,191,36,0.08)' : 'rgba(74,222,128,0.08)')}
-                    title={s.active ? 'Désactiver' : 'Activer'}
+                  </IconBtn>
+                  <IconBtn
                     onClick={() => handleToggle(s.id, s.active)}
+                    className={s.active
+                      ? 'text-amber-500 dark:text-amber-400 bg-amber-500/8 hover:bg-amber-500/15'
+                      : 'text-green-500 dark:text-green-400 bg-green-500/8 hover:bg-green-500/15'
+                    }
+                    title={s.active ? 'Désactiver' : 'Activer'}
                   >
                     <Power className="w-3 h-3" />
-                  </button>
-                  <button
-                    style={iconBtn('var(--muted-foreground)', 'transparent')}
+                  </IconBtn>
+                  <IconBtn
+                    onClick={() => setDeleteTarget({ id: s.id, name: s.name })}
+                    className="text-muted-foreground hover:text-red-500 dark:hover:text-red-400 hover:bg-red-500/10"
                     title="Supprimer"
-                    onClick={() => handleDelete(s.id)}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.color = '#ef4444' }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--muted-foreground)' }}
                   >
                     <Trash2 className="w-3 h-3" />
-                  </button>
+                  </IconBtn>
                 </>
               )}
             </div>
@@ -169,14 +157,51 @@ export default function StationsSettings() {
         ))}
 
         {stations.length === 0 && (
-          <div
-            className="text-center py-10 rounded-xl text-sm"
-            style={{ color: 'var(--muted-foreground)', border: '1px dashed var(--border)' }}
-          >
+          <div className="text-center py-10 rounded-xl text-sm text-muted-foreground border border-dashed border-border">
             Aucune station configurée
           </div>
         )}
       </div>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={open => { if (!open) setDeleteTarget(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer la station</AlertDialogTitle>
+            <AlertDialogDescription>
+              Voulez-vous vraiment supprimer <span className="font-semibold text-foreground">{deleteTarget?.name}</span> ?
+              Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirmed}
+              className="bg-red-500 hover:bg-red-600 text-white dark:bg-red-500 dark:hover:bg-red-600"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  )
+}
+
+// ── Small icon button helper ─────────────────────────────────────────────────
+function IconBtn({ onClick, children, className, title }: {
+  onClick:   () => void
+  children:  React.ReactNode
+  className: string
+  title?:    string
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`w-[26px] h-[26px] rounded-md flex items-center justify-center shrink-0 transition-colors cursor-pointer ${className}`}
+    >
+      {children}
+    </button>
   )
 }

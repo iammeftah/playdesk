@@ -5,6 +5,54 @@ import { Session, Station } from '../types'
 import StationGrid from '../components/station/StationGrid'
 import { Button } from '@/components/ui/button'
 
+interface StatCardProps {
+  label: string
+  value: number
+  variant: 'green' | 'amber' | 'neutral'
+  delay: number
+}
+
+function StatCard({ label, value, variant, delay }: StatCardProps) {
+  const variantClass: Record<string, {
+    card: string
+    value: string
+    bar: string
+  }> = {
+    green: {
+      card:  'bg-green-50/60 dark:bg-green-500/5 border-green-200/60 dark:border-green-500/15',
+      value: 'text-green-600 dark:text-green-400',
+      bar:   'bg-green-500 dark:bg-green-400',
+    },
+    amber: {
+      card:  'bg-amber-50/60 dark:bg-amber-500/5 border-amber-200/60 dark:border-amber-500/15',
+      value: 'text-amber-600 dark:text-amber-400',
+      bar:   'bg-amber-500 dark:bg-amber-400',
+    },
+    neutral: {
+      card:  'bg-card border-border',
+      value: 'text-foreground',
+      bar:   'bg-border',
+    },
+  }
+
+  const c = variantClass[variant]
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      className={`rounded-xl border px-7 py-5 flex items-center justify-between ${c.card}`}
+    >
+      <div>
+        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-2">{label}</p>
+        <p className={`text-5xl font-bold font-mono tabular-nums leading-none ${c.value}`}>{value}</p>
+      </div>
+      <div className={`w-[3px] h-9 rounded-full opacity-40 ${c.bar}`} />
+    </motion.div>
+  )
+}
+
 export default function CaissePage() {
   const [stations, setStations]       = useState<Station[]>([])
   const [sessions, setSessions]       = useState<Session[]>([])
@@ -53,6 +101,7 @@ export default function CaissePage() {
       transition={{ duration: 0.2 }}
       className="p-6 flex flex-col gap-5 h-full overflow-auto"
     >
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-sans text-2xl font-bold text-foreground tracking-widest uppercase">Caisse</h2>
@@ -66,27 +115,11 @@ export default function CaissePage() {
         </Button>
       </div>
 
+      {/* Stat cards */}
       <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: 'Actives',  value: activeSessions.length, color: '#4ade80', dim: 'rgba(74,222,128,0.06)',  border: 'rgba(74,222,128,0.15)'  },
-          { label: 'En pause', value: pausedSessions.length, color: '#fbbf24', dim: 'rgba(251,191,36,0.06)',  border: 'rgba(251,191,36,0.15)'  },
-          { label: 'Libres',   value: freeStations.length,   color: 'var(--foreground)', dim: 'var(--card)', border: 'var(--border)' },
-        ].map(({ label, value, color, dim, border }, i) => (
-          <motion.div
-            key={label}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.04 }}
-            className="rounded-xl flex items-center justify-between"
-            style={{ background: dim, border: `1px solid ${border}`, padding: '20px 28px' }}
-          >
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-2">{label}</p>
-              <p className="text-5xl font-bold font-mono tabular-nums leading-none" style={{ color }}>{value}</p>
-            </div>
-            <div style={{ width: 3, height: 36, borderRadius: 2, background: color, opacity: 0.35 }} />
-          </motion.div>
-        ))}
+        <StatCard label="Actives"  value={activeSessions.length} variant="green"   delay={0}    />
+        <StatCard label="En pause" value={pausedSessions.length} variant="amber"   delay={0.04} />
+        <StatCard label="Libres"   value={freeStations.length}   variant="neutral" delay={0.08} />
       </div>
 
       <StationGrid stations={stations} sessions={sessions} onRefresh={refresh} />
