@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Minus, Maximize2, Minimize2, X, Gamepad2, AlertTriangle } from 'lucide-react'
+import { Gamepad2, AlertTriangle } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { useShiftStore } from '../../store/useShiftStore'
 import {
@@ -14,18 +14,18 @@ import {
 import { Button } from '../ui/button'
 
 export default function TitleBar() {
-  const { user, logout }       = useAuthStore()
-  const { activeShift }        = useShiftStore()
-  const [maximized, setMaximized]       = useState(false)
-  const [closeGuard, setCloseGuard]     = useState(false)
+  const { user, logout }               = useAuthStore()
+  const { activeShift }                = useShiftStore()
+  const [maximized, setMaximized]      = useState(false)
+  const [closeGuard, setCloseGuard]    = useState(false)
   const [closingShift, setClosingShift] = useState(false)
+  const [groupHovered, setGroupHovered] = useState(false)
 
-  // Track maximize state by listening to window resize
   useEffect(() => {
     const check = () => {
       setMaximized(
         window.innerWidth  === screen.availWidth &&
-        window.innerHeight === screen.availHeight
+        window.innerHeight === screen.availHeight,
       )
     }
     check()
@@ -47,7 +47,8 @@ export default function TitleBar() {
     window.playdesk.window.close()
   }
 
-  const handleClose = () => {    if (activeShift && (activeShift.status === 'open' || activeShift.status === 'paused')) {
+  const handleClose = () => {
+    if (activeShift && (activeShift.status === 'open' || activeShift.status === 'paused')) {
       setCloseGuard(true)
     } else {
       window.playdesk.window.close()
@@ -56,163 +57,201 @@ export default function TitleBar() {
 
   const handleMaximize = () => {
     window.playdesk.window.maximize()
-    // Optimistic toggle — resize event will correct if wrong
     setMaximized(v => !v)
   }
 
   return (
-  <>
-    <motion.div
-      initial={{ opacity: 0, y: -4 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
-      className="titlebar-drag h-10 border-b flex items-center px-3 gap-3 select-none shrink-0 relative z-50"
-      style={{
-        background:          'var(--titlebar-bg)',
-        borderColor:         'var(--titlebar-border)',
-        backdropFilter:      'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-      }}
-    >
-      {/* Brand */}
-      <div className="flex items-center gap-2">
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: -4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className="titlebar-drag h-10 border-b flex items-center px-3 gap-3 select-none shrink-0 relative z-50"
+        style={{
+          background:           'var(--titlebar-bg)',
+          borderColor:          'var(--titlebar-border)',
+          backdropFilter:       'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+        }}
+      >
+        {/* ── macOS traffic-light buttons ── */}
         <div
-          className="w-5 h-5 rounded-md flex items-center justify-center"
-          style={{ background: 'var(--muted)', border: '1px solid var(--border)' }}
+          className="flex items-center gap-1.5 shrink-0"
+          onMouseEnter={() => setGroupHovered(true)}
+          onMouseLeave={() => setGroupHovered(false)}
         >
-          <Gamepad2 className="w-3 h-3" style={{ color: 'var(--foreground)', opacity: 0.6 }} />
-        </div>
-        <span className="font-bold text-xs tracking-[0.2em] uppercase" style={{ color: 'var(--foreground)', opacity: 0.8 }}>
-          Play<span style={{ color: 'var(--neon)' }}>Desk</span>
-        </span>
-      </div>
-
-      {/* Draggable spacer */}
-      <div className="titlebar-drag-region flex-1 h-full" />
-
-      {/* Logged-in user */}
-      {user && (
-        <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-2">
-            <div
-              className="w-5 h-5 rounded-md flex items-center justify-center"
-              style={{ background: 'var(--muted)', border: '1px solid var(--border)' }}
-            >
-              <span className="text-[9px] font-bold" style={{ color: 'var(--muted-foreground)' }}>
-                {user.username[0].toUpperCase()}
-              </span>
-            </div>
-            <div className="leading-none">
-              <p className="text-[11px] font-medium" style={{ color: 'var(--foreground)', opacity: 0.8 }}>
-                {user.username}
-              </p>
-              <p className="text-[9px] uppercase tracking-widest mt-0.5" style={{ color: 'var(--neon)' }}>
-                {user.role}
-              </p>
-            </div>
-          </div>
-          <div className="w-px h-3.5" style={{ background: 'var(--border)' }} />
-          <button
-            onClick={handleLogout}
-            className="text-[10px] px-2 py-1 rounded-md tracking-wide transition-colors"
-            style={{ color: 'var(--muted-foreground)' }}
-            onMouseEnter={e => { e.currentTarget.style.color = 'var(--foreground)'; e.currentTarget.style.background = 'var(--muted)' }}
-            onMouseLeave={e => { e.currentTarget.style.color = 'var(--muted-foreground)'; e.currentTarget.style.background = 'transparent' }}
+          {/* Red — close */}
+          <TrafficBtn
+            onClick={handleClose}
+            baseColor="#ff5f57"
+            glowColor="rgba(255,95,87,0.55)"
+            hovered={groupHovered}
+            label="Fermer"
           >
-            Déconnexion
-          </button>
+            {/* × symbol */}
+            <svg viewBox="0 0 8 8" className="w-1.5 h-1.5" fill="none" stroke="#4d0000" strokeWidth="1.2" strokeLinecap="round">
+              <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" />
+              <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" />
+            </svg>
+          </TrafficBtn>
+
+          {/* Yellow — minimize */}
+          <TrafficBtn
+            onClick={() => window.playdesk.window.minimize()}
+            baseColor="#febc2e"
+            glowColor="rgba(254,188,46,0.55)"
+            hovered={groupHovered}
+            label="Réduire"
+          >
+            {/* − symbol */}
+            <svg viewBox="0 0 8 8" className="w-1.5 h-1.5" fill="none" stroke="#4d3300" strokeWidth="1.2" strokeLinecap="round">
+              <line x1="1.5" y1="4" x2="6.5" y2="4" />
+            </svg>
+          </TrafficBtn>
+
+          {/* Green — maximize */}
+          <TrafficBtn
+            onClick={handleMaximize}
+            baseColor="#28c840"
+            glowColor="rgba(40,200,64,0.55)"
+            hovered={groupHovered}
+            label={maximized ? 'Restaurer' : 'Agrandir'}
+          >
+            {/* ⤢ or ⤡ symbol */}
+            {maximized ? (
+              <svg viewBox="0 0 8 8" className="w-1.5 h-1.5" fill="none" stroke="#003d00" strokeWidth="1.2" strokeLinecap="round">
+                <line x1="2" y1="2" x2="6" y2="6" />
+                <polyline points="6,3 6,6 3,6" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 8 8" className="w-1.5 h-1.5" fill="none" stroke="#003d00" strokeWidth="1.2" strokeLinecap="round">
+                <line x1="2" y1="6" x2="6" y2="2" />
+                <polyline points="2,3 2,6 5,6" />
+              </svg>
+            )}
+          </TrafficBtn>
         </div>
-      )}
 
-      {/* Window controls — minimize / maximize / close */}
-      <div className="flex gap-0.5 ml-1">
-        <WinBtn
-          onClick={() => window.playdesk.window.minimize()}
-          hoverBg="var(--muted)"
-          hoverColor="var(--foreground)"
-          label="Réduire"
-        >
-          <Minus className="w-3 h-3" />
-        </WinBtn>
-
-        <WinBtn
-          onClick={handleMaximize}
-          hoverBg="var(--muted)"
-          hoverColor="var(--foreground)"
-          label={maximized ? 'Restaurer' : 'Agrandir'}
-        >
-          {maximized
-            ? <Minimize2 className="w-3 h-3" />
-            : <Maximize2 className="w-3 h-3" />
-          }
-        </WinBtn>
-
-        <WinBtn
-          onClick={handleClose}
-          hoverBg="rgba(239,68,68,0.75)"
-          hoverColor="#fff"
-          label="Fermer"
-        >
-          <X className="w-3 h-3" />
-        </WinBtn>
-      </div>
-    </motion.div>
-
-    {/* ── Close guard modal ─────────────────────────────────────────────── */}
-    <Dialog open={closeGuard} onOpenChange={(open) => { if (!open && !closingShift) setCloseGuard(false) }}>
-      <DialogContent className="sm:max-w-[400px]">
-        <DialogHeader>
-          <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle className="w-5 h-5 text-amber-500" />
-            <DialogTitle>Shift encore ouvert</DialogTitle>
+        {/* ── Brand ── */}
+        <div className="flex items-center gap-2">
+          <div
+            className="w-5 h-5 rounded-md flex items-center justify-center"
+            style={{ background: 'var(--muted)', border: '1px solid var(--border)' }}
+          >
+            <Gamepad2 className="w-3 h-3" style={{ color: 'var(--foreground)', opacity: 0.6 }} />
           </div>
-          <DialogDescription>
-            Vous avez un shift{' '}
-            <span className="font-medium text-foreground">
-              {activeShift?.status === 'paused' ? 'en pause' : 'en cours'}
-            </span>{' '}
-            non clôturé. En fermant l'application, le shift sera automatiquement clôturé.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => setCloseGuard(false)} disabled={closingShift}>
-            Annuler
-          </Button>
-          <Button variant="destructive" onClick={handleCloseAndExit} disabled={closingShift}>
-            {closingShift ? 'Clôture en cours...' : 'Clôturer et fermer'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  </>
+          <span
+            className="font-bold text-xs tracking-[0.2em] uppercase"
+            style={{ color: 'var(--foreground)', opacity: 0.8 }}
+          >
+            Play<span style={{ color: 'var(--neon)' }}>Desk</span>
+          </span>
+        </div>
+
+        {/* ── Draggable spacer ── */}
+        <div className="titlebar-drag-region flex-1 h-full" />
+
+        {/* ── Logged-in user ── */}
+        {user && (
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
+              <div
+                className="w-5 h-5 rounded-md flex items-center justify-center"
+                style={{ background: 'var(--muted)', border: '1px solid var(--border)' }}
+              >
+                <span className="text-[9px] font-bold" style={{ color: 'var(--muted-foreground)' }}>
+                  {user.username[0].toUpperCase()}
+                </span>
+              </div>
+              <div className="leading-none">
+                <p className="text-[11px] font-medium" style={{ color: 'var(--foreground)', opacity: 0.8 }}>
+                  {user.username}
+                </p>
+                <p className="text-[9px] uppercase tracking-widest mt-0.5" style={{ color: 'var(--neon)' }}>
+                  {user.role}
+                </p>
+              </div>
+            </div>
+            <div className="w-px h-3.5" style={{ background: 'var(--border)' }} />
+            <button
+              onClick={handleLogout}
+              className="text-[10px] px-2 py-1 rounded-md tracking-wide transition-colors"
+              style={{ color: 'var(--muted-foreground)' }}
+              onMouseEnter={e => {
+                e.currentTarget.style.color      = 'var(--foreground)'
+                e.currentTarget.style.background = 'var(--muted)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.color      = 'var(--muted-foreground)'
+                e.currentTarget.style.background = 'transparent'
+              }}
+            >
+              Déconnexion
+            </button>
+          </div>
+        )}
+      </motion.div>
+
+      {/* ── Close guard modal ── */}
+      <Dialog
+        open={closeGuard}
+        onOpenChange={open => { if (!open && !closingShift) setCloseGuard(false) }}
+      >
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-1">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              <DialogTitle>Shift encore ouvert</DialogTitle>
+            </div>
+            <DialogDescription>
+              Vous avez un shift{' '}
+              <span className="font-medium text-foreground">
+                {activeShift?.status === 'paused' ? 'en pause' : 'en cours'}
+              </span>{' '}
+              non clôturé. En fermant l'application, le shift sera automatiquement clôturé.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setCloseGuard(false)} disabled={closingShift}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={handleCloseAndExit} disabled={closingShift}>
+              {closingShift ? 'Clôture en cours...' : 'Clôturer et fermer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 
-function WinBtn({
-  onClick, children, hoverBg, hoverColor, label,
+// ── Traffic light button ──────────────────────────────────────────────────────
+function TrafficBtn({
+  onClick, baseColor, glowColor, hovered, label, children,
 }: {
-  onClick:     () => void
-  children:    React.ReactNode
-  hoverBg:     string
-  hoverColor:  string
-  label?:      string
+  onClick:    () => void
+  baseColor:  string
+  glowColor:  string
+  hovered:    boolean
+  label?:     string
+  children:   React.ReactNode
 }) {
   return (
     <button
       onClick={onClick}
       title={label}
-      className="w-6 h-6 rounded-md flex items-center justify-center transition-colors"
-      style={{ color: 'var(--muted-foreground)' }}
-      onMouseEnter={e => {
-        e.currentTarget.style.background = hoverBg
-        e.currentTarget.style.color = hoverColor
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.background = 'transparent'
-        e.currentTarget.style.color = 'var(--muted-foreground)'
+      className="w-3 h-3 rounded-full flex items-center justify-center transition-all duration-150 shrink-0 cursor-default"
+      style={{
+        background: baseColor,
+        boxShadow:  hovered ? `0 0 5px ${glowColor}` : 'none',
       }}
     >
-      {children}
+      <span
+        className="transition-opacity duration-100 flex items-center justify-center"
+        style={{ opacity: hovered ? 1 : 0 }}
+      >
+        {children}
+      </span>
     </button>
   )
 }

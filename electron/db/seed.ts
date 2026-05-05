@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL CHECK(role IN ('admin', 'manager')),
   active INTEGER NOT NULL DEFAULT 1,
+  avatar TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -79,6 +80,10 @@ export function runMigrations() {
   if (!licenseCols.includes('trial_started_at'))        db.exec('ALTER TABLE license ADD COLUMN trial_started_at INTEGER')
   if (!licenseCols.includes('subscription_expires_at')) db.exec('ALTER TABLE license ADD COLUMN subscription_expires_at TEXT')
 
+  // ── users columns ────────────────────────────────────────────────────────────
+  const userCols = (db.prepare('PRAGMA table_info(users)').all() as any[]).map((c: any) => c.name)
+  if (!userCols.includes('avatar')) db.exec('ALTER TABLE users ADD COLUMN avatar TEXT')
+
   // ── shifts table ────────────────────────────────────────────────────────────
   const tables = (db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as any[]).map((r: any) => r.name)
   if (!tables.includes('shifts')) {
@@ -98,14 +103,10 @@ export function runMigrations() {
       )
     `)
   } else {
-    // Migrate existing shifts table that may be missing columns or have wrong CHECK constraint.
-    // SQLite cannot ALTER a CHECK constraint, so we recreate the table if needed.
     const shiftCols = (db.prepare('PRAGMA table_info(shifts)').all() as any[]).map((c: any) => c.name)
-
     const needsRecreate = !shiftCols.includes('paused_at_unix') || !shiftCols.includes('paused_duration')
 
     if (needsRecreate) {
-      // Recreate with correct schema, preserving existing data
       db.exec(`
         BEGIN;
 

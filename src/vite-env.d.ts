@@ -87,12 +87,15 @@ interface Window {
     }
 
     users: {
-      list:    () => Promise<any[]>
-      create:  (data: { username: string; password: string; role: string }) => Promise<{ success: boolean; id?: number; error?: string }>
-      update:  (id: number, data: { username?: string; password?: string; role?: string }) => Promise<{ success: boolean }>
-      disable: (id: number) => Promise<{ success: boolean }>
-      enable:  (id: number) => Promise<{ success: boolean }>
-      delete:  (id: number) => Promise<{ success: boolean }>
+      list:           () => Promise<any[]>
+      create:         (data: { username: string; password: string; role: string }) => Promise<{ success: boolean; id?: number; error?: string }>
+      update:         (id: number, data: { username?: string; password?: string; role?: string }) => Promise<{ success: boolean }>
+      disable:        (id: number) => Promise<{ success: boolean }>
+      enable:         (id: number) => Promise<{ success: boolean }>
+      delete:         (id: number) => Promise<{ success: boolean }>
+      changePassword: (data: { currentPassword: string; newPassword: string }) => Promise<{ success: boolean; error?: string }>
+      getAvatar:      (id: number) => Promise<{ success: boolean; avatar: string | null; error?: string }>
+      setAvatar:      (id: number, base64: string) => Promise<{ success: boolean; error?: string }>
     }
   }
 }

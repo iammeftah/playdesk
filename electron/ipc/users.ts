@@ -37,9 +37,7 @@ ipcMain.handle('users:enable', async (_e, id: number) => {
 
 ipcMain.handle('users:delete', async (_e, id: number) => {
   try {
-    // Reassign all their sessions to admin (id=1) to preserve revenue history,
-    // then delete the user — atomically in a single transaction.
-    const adminUser = db.prepare("SELECT id FROM users WHERE role = 'admin' ORDER BY id ASC LIMIT 1").get() as any
+    const adminUser  = db.prepare("SELECT id FROM users WHERE role = 'admin' ORDER BY id ASC LIMIT 1").get() as any
     const fallbackId = adminUser?.id ?? 1
 
     const deleteTransaction = db.transaction(() => {
@@ -48,6 +46,60 @@ ipcMain.handle('users:delete', async (_e, id: number) => {
     })
 
     deleteTransaction()
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('users:changePassword', async (_e, data: { currentPassword: string; newPassword: string }) => {
+  try {
+    const { currentUser } = await import('./auth')
+    if (!currentUser) return { success: false, error: 'Non authentifié' }
+
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(currentUser.id) as any
+    if (!user) return { success: false, error: 'Utilisateur introuvable' }
+
+    if (!bcrypt.compareSync(data.currentPassword, user.password_hash))
+      return { success: false, error: 'Mot de passe actuel incorrect' }
+
+    const hash = bcrypt.hashSync(data.newPassword, 10)
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, currentUser.id)
+
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('users:getAvatar', async (_e, id: number) => {
+  try {
+    const row = db.prepare('SELECT avatar FROM users WHERE id = ?').get(id) as any
+    return { success: true, avatar: row?.avatar ?? null }
+  } catch (e: any) {
+    return { success: false, avatar: null, error: e.message }
+  }
+})
+
+ipcMain.handle('users:setAvatar', async (_e, id: number, base64: string) => {
+  try {
+    // Empty string means reset to default — store NULL
+    if (base64 === '') {
+      db.prepare('UPDATE users SET avatar = NULL WHERE id = ?').run(id)
+      return { success: true }
+    }
+
+    // Must be a valid image data URI
+    if (!base64.startsWith('data:image/')) {
+      return { success: false, error: 'Format invalide' }
+    }
+
+    // Hard cap at ~2 MB of base64 (~2.8 MB encoded)
+    if (base64.length > 2_800_000) {
+      return { success: false, error: 'Image trop grande (max 2 Mo)' }
+    }
+
+    db.prepare('UPDATE users SET avatar = ? WHERE id = ?').run(base64, id)
     return { success: true }
   } catch (e: any) {
     return { success: false, error: e.message }

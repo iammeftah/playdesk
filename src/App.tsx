@@ -10,8 +10,9 @@ import SettingsPage   from './pages/SettingsPage'
 import TitleBar       from './components/layout/TitleBar'
 import Sidebar        from './components/layout/Sidebar'
 import UndoToastContainer from './components/common/undoToast'
+import ProfilePage from './pages/ProfilePage'
 
-export type Page = 'caisse' | 'dashboard' | 'settings'
+export type Page = 'caisse' | 'dashboard' | 'settings' | 'profile'
 
 const pageVariants = {
   initial: { opacity: 0, y: 6  },
@@ -112,6 +113,7 @@ export default function App() {
               {page === 'caisse'                              && <CaissePage />}
               {page === 'dashboard' && user.role === 'admin'  && <DashboardPage />}
               {page === 'settings'  && user.role === 'admin'  && <SettingsPage />}
+              {page === 'profile'  && <ProfilePage />}
             </motion.div>
           </AnimatePresence>
         </main>
