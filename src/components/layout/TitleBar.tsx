@@ -1,11 +1,24 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Minus, Maximize2, Minimize2, X, Gamepad2 } from 'lucide-react'
+import { Minus, Maximize2, Minimize2, X, Gamepad2, AlertTriangle } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
+import { useShiftStore } from '../../store/useShiftStore'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '../ui/dialog'
+import { Button } from '../ui/button'
 
 export default function TitleBar() {
-  const { user, logout }      = useAuthStore()
-  const [maximized, setMaximized] = useState(false)
+  const { user, logout }       = useAuthStore()
+  const { activeShift }        = useShiftStore()
+  const [maximized, setMaximized]       = useState(false)
+  const [closeGuard, setCloseGuard]     = useState(false)
+  const [closingShift, setClosingShift] = useState(false)
 
   // Track maximize state by listening to window resize
   useEffect(() => {
@@ -25,6 +38,22 @@ export default function TitleBar() {
     logout()
   }
 
+  const handleCloseAndExit = async () => {
+    if (!activeShift || !user) { window.playdesk.window.close(); return }
+    try {
+      setClosingShift(true)
+      await window.playdesk.shifts.close(user.id)
+    } catch {}
+    window.playdesk.window.close()
+  }
+
+  const handleClose = () => {    if (activeShift && (activeShift.status === 'open' || activeShift.status === 'paused')) {
+      setCloseGuard(true)
+    } else {
+      window.playdesk.window.close()
+    }
+  }
+
   const handleMaximize = () => {
     window.playdesk.window.maximize()
     // Optimistic toggle — resize event will correct if wrong
@@ -32,6 +61,7 @@ export default function TitleBar() {
   }
 
   return (
+  <>
     <motion.div
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
@@ -118,7 +148,7 @@ export default function TitleBar() {
         </WinBtn>
 
         <WinBtn
-          onClick={() => window.playdesk.window.close()}
+          onClick={handleClose}
           hoverBg="rgba(239,68,68,0.75)"
           hoverColor="#fff"
           label="Fermer"
@@ -127,6 +157,34 @@ export default function TitleBar() {
         </WinBtn>
       </div>
     </motion.div>
+
+    {/* ── Close guard modal ─────────────────────────────────────────────── */}
+    <Dialog open={closeGuard} onOpenChange={(open) => { if (!open && !closingShift) setCloseGuard(false) }}>
+      <DialogContent className="sm:max-w-[400px]">
+        <DialogHeader>
+          <div className="flex items-center gap-2 mb-1">
+            <AlertTriangle className="w-5 h-5 text-amber-500" />
+            <DialogTitle>Shift encore ouvert</DialogTitle>
+          </div>
+          <DialogDescription>
+            Vous avez un shift{' '}
+            <span className="font-medium text-foreground">
+              {activeShift?.status === 'paused' ? 'en pause' : 'en cours'}
+            </span>{' '}
+            non clôturé. En fermant l'application, le shift sera automatiquement clôturé.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => setCloseGuard(false)} disabled={closingShift}>
+            Annuler
+          </Button>
+          <Button variant="destructive" onClick={handleCloseAndExit} disabled={closingShift}>
+            {closingShift ? 'Clôture en cours...' : 'Clôturer et fermer'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </>
   )
 }
 

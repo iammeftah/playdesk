@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Play, Square, Clock, Users, RefreshCw, AlertTriangle, Coffee } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
+import { useShiftStore } from '../../store/useShiftStore'
 import { formatMAD } from '../../lib/utils'
 import { Button } from '../ui/button'
 import {
@@ -163,7 +164,8 @@ export function ShiftControl({
    */
   onShiftChange?: (shift: Shift | null) => void
 }) {
-  const { user } = useAuthStore()
+  const { user }           = useAuthStore()
+  const { setActiveShift } = useShiftStore()
 
   const [shift, setShift]     = useState<Shift | null>(null)
   const [loading, setLoading] = useState(false)
@@ -183,6 +185,7 @@ export function ShiftControl({
     const s     = await window.playdesk.shifts.current(user.id)
     const typed = s as Shift | null
     setShift(typed)
+    setActiveShift(typed)
     // Sync elapsed unconditionally — ensures the paused display shows the
     // correct frozen value right after handlePause → loadShift completes
     setElapsed(typed ? computeShiftElapsed(typed) : 0)
