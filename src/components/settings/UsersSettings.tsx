@@ -24,6 +24,9 @@ import { Label }  from '@/components/ui/label'
 
 type ConfirmTarget = { id: number; username: string } | null
 
+// Matches the Result type returned by every IPC handler
+type IpcResult = { success: boolean; error?: string }
+
 export default function UsersSettings() {
   const { user: currentUser } = useAuthStore()
 
@@ -39,6 +42,9 @@ export default function UsersSettings() {
   const [confirmDisable, setConfirmDisable] = useState<ConfirmTarget>(null)
   const [confirmEnable,  setConfirmEnable]  = useState<ConfirmTarget>(null)
   const [confirmDelete,  setConfirmDelete]  = useState<ConfirmTarget>(null)
+
+  // Action-level error (shown below the list)
+  const [actionError, setActionError] = useState('')
 
   const load = async () => { setUsers(await window.playdesk.users.list()) }
   useEffect(() => { load() }, [])
@@ -59,7 +65,7 @@ export default function UsersSettings() {
       return
     }
     setLoading(true)
-    const res = await window.playdesk.users.create(form)
+    const res = await window.playdesk.users.create(form) as IpcResult
     if (res.success) {
       setCreateOpen(false)
       resetCreate()
@@ -73,27 +79,43 @@ export default function UsersSettings() {
   const handleDisable = async () => {
     if (!confirmDisable) return
     setLoading(true)
-    await window.playdesk.users.disable(confirmDisable.id)
-    setConfirmDisable(null)
-    await load()
+    setActionError('')
+    const res = await window.playdesk.users.disable(confirmDisable.id) as IpcResult
+    if (!res.success) {
+      setActionError(res.error ?? 'Impossible de désactiver ce compte.')
+    } else {
+      setConfirmDisable(null)
+      await load()
+    }
     setLoading(false)
   }
 
   const handleEnable = async () => {
     if (!confirmEnable) return
     setLoading(true)
-    await window.playdesk.users.enable(confirmEnable.id)
-    setConfirmEnable(null)
-    await load()
+    setActionError('')
+    const res = await window.playdesk.users.enable(confirmEnable.id) as IpcResult
+    if (!res.success) {
+      setActionError(res.error ?? 'Impossible de réactiver ce compte.')
+    } else {
+      setConfirmEnable(null)
+      await load()
+    }
     setLoading(false)
   }
 
   const handleDelete = async () => {
     if (!confirmDelete) return
     setLoading(true)
-    await window.playdesk.users.delete(confirmDelete.id)
-    setConfirmDelete(null)
-    await load()
+    setActionError('')
+    const res = await window.playdesk.users.delete(confirmDelete.id) as IpcResult
+    if (!res.success) {
+      setActionError(res.error ?? 'Impossible de supprimer ce compte.')
+      setConfirmDelete(null)
+    } else {
+      setConfirmDelete(null)
+      await load()
+    }
     setLoading(false)
   }
 
@@ -107,12 +129,20 @@ export default function UsersSettings() {
           size="sm"
           variant="outline"
           className="gap-1.5 text-xs"
-          onClick={() => { setCreateOpen(true); setFormError('') }}
+          onClick={() => { setCreateOpen(true); setFormError(''); setActionError('') }}
         >
           <UserPlus className="w-3.5 h-3.5" />
           Nouveau compte
         </Button>
       </div>
+
+      {/* Action-level error banner */}
+      {actionError && (
+        <div className="mb-3 px-3 py-2 rounded-lg text-xs text-red-500 dark:text-red-400 border border-red-500/20 bg-red-500/5 flex items-center justify-between gap-2">
+          <span>{actionError}</span>
+          <button onClick={() => setActionError('')} className="shrink-0 text-red-400 hover:text-red-300 transition-colors">✕</button>
+        </div>
+      )}
 
       {/* Users list */}
       <div className="flex flex-col gap-2">

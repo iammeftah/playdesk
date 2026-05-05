@@ -55,7 +55,7 @@ export default function LoginPage() {
  
 
   return (
-    <div className="h-screen bg-background flex items-center justify-center overflow-hidden">
+    <div className="h-screen bg-white dark:bg-black flex items-center justify-center overflow-hidden">
       {/* Background effect */}
       <div className="absolute inset-0">
         <ColorBends
@@ -95,7 +95,7 @@ export default function LoginPage() {
 
         {/* Glass card */}
         <div
-          className="rounded-2xl p-6 flex flex-col gap-4 bg-white/35 dark:bg-slate-900/35 border border-black/8 dark:border-white/8 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_8px_48px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.06)] dark:shadow-[0_8px_48px_black/45,inset_0_1px_0_white/6]"
+          className="rounded-2xl p-6 flex flex-col gap-4 backdrop-blur-2xl backdrop-saturate-150 "
         >
           {/* Identifiant */}
           <div className="flex flex-col gap-1.5">

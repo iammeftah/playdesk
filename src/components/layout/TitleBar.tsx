@@ -13,6 +13,14 @@ import {
 } from '../ui/dialog'
 import { Button } from '../ui/button'
 
+const DEFAULT_AVATAR = `data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+    <rect width="40" height="40" rx="10" fill="#1e2035"/>
+    <circle cx="20" cy="15" r="7" fill="#3d4068"/>
+    <path d="M6 36c0-7.732 6.268-14 14-14s14 6.268 14 14" fill="#3d4068"/>
+  </svg>`
+)}`
+
 export default function TitleBar() {
   const { user, logout }               = useAuthStore()
   const { activeShift }                = useShiftStore()
@@ -20,6 +28,27 @@ export default function TitleBar() {
   const [closeGuard, setCloseGuard]    = useState(false)
   const [closingShift, setClosingShift] = useState(false)
   const [groupHovered, setGroupHovered] = useState(false)
+
+  // ── Avatar state ──────────────────────────────────────────────────────────
+  const [titlebarAvatar, setTitlebarAvatar] = useState<string>(DEFAULT_AVATAR)
+
+  // Load avatar on mount
+  useEffect(() => {
+    if (!user?.id) return
+    window.playdesk.users.getAvatar(user.id).then(res => {
+      setTitlebarAvatar(res.avatar ?? DEFAULT_AVATAR)
+    })
+  }, [user?.id])
+
+  // Listen for avatar updates from ProfilePage
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<string>).detail
+      setTitlebarAvatar(detail || DEFAULT_AVATAR)
+    }
+    window.addEventListener('playdesk:avatar-updated', handler)
+    return () => window.removeEventListener('playdesk:avatar-updated', handler)
+  }, [])
 
   useEffect(() => {
     const check = () => {
@@ -88,7 +117,6 @@ export default function TitleBar() {
             hovered={groupHovered}
             label="Fermer"
           >
-            {/* × symbol */}
             <svg viewBox="0 0 8 8" className="w-1.5 h-1.5" fill="none" stroke="#4d0000" strokeWidth="1.2" strokeLinecap="round">
               <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" />
               <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" />
@@ -103,7 +131,6 @@ export default function TitleBar() {
             hovered={groupHovered}
             label="Réduire"
           >
-            {/* − symbol */}
             <svg viewBox="0 0 8 8" className="w-1.5 h-1.5" fill="none" stroke="#4d3300" strokeWidth="1.2" strokeLinecap="round">
               <line x1="1.5" y1="4" x2="6.5" y2="4" />
             </svg>
@@ -117,7 +144,6 @@ export default function TitleBar() {
             hovered={groupHovered}
             label={maximized ? 'Restaurer' : 'Agrandir'}
           >
-            {/* ⤢ or ⤡ symbol */}
             {maximized ? (
               <svg viewBox="0 0 8 8" className="w-1.5 h-1.5" fill="none" stroke="#003d00" strokeWidth="1.2" strokeLinecap="round">
                 <line x1="2" y1="2" x2="6" y2="6" />
@@ -134,12 +160,6 @@ export default function TitleBar() {
 
         {/* ── Brand ── */}
         <div className="flex items-center gap-2">
-          <div
-            className="w-5 h-5 rounded-md flex items-center justify-center"
-            style={{ background: 'var(--muted)', border: '1px solid var(--border)' }}
-          >
-            <Gamepad2 className="w-3 h-3" style={{ color: 'var(--foreground)', opacity: 0.6 }} />
-          </div>
           <span
             className="font-bold text-xs tracking-[0.2em] uppercase"
             style={{ color: 'var(--foreground)', opacity: 0.8 }}
@@ -151,17 +171,20 @@ export default function TitleBar() {
         {/* ── Draggable spacer ── */}
         <div className="titlebar-drag-region flex-1 h-full" />
 
-        {/* ── Logged-in user ── */}
+        {/* ── Logged-in user (with avatar) ── */}
         {user && (
           <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-2">
+              {/* Avatar image instead of letter */}
               <div
-                className="w-5 h-5 rounded-md flex items-center justify-center"
-                style={{ background: 'var(--muted)', border: '1px solid var(--border)' }}
+                className="w-5 h-5 rounded-md overflow-hidden shrink-0"
+                style={{ border: '1px solid var(--border)' }}
               >
-                <span className="text-[9px] font-bold" style={{ color: 'var(--muted-foreground)' }}>
-                  {user.username[0].toUpperCase()}
-                </span>
+                <img
+                  src={titlebarAvatar}
+                  alt={user.username}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div className="leading-none">
                 <p className="text-[11px] font-medium" style={{ color: 'var(--foreground)', opacity: 0.8 }}>
