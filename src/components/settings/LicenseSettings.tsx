@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   ShieldCheck, ShieldOff, Clock, AlertTriangle,
-  Code2, KeyRound, Loader2, AlertCircle, CalendarClock,
+  Code2, KeyRound, Loader2, AlertCircle, CalendarClock, CalendarDays,
 } from 'lucide-react'
 
 type LicenseStatus = {
@@ -13,6 +13,51 @@ type LicenseStatus = {
   expired?:               boolean
   trialEndsAt?:           number
   daysLeft?:              number
+}
+
+function ExpiryCountdown({ expiresAt, daysLeft }: { expiresAt: string; daysLeft: number }) {
+  const urgent  = daysLeft <= 7
+  const warning = daysLeft <= 30
+
+  return (
+    <div className={`rounded-xl px-4 py-3 flex flex-col gap-2 border ${
+      urgent  ? 'bg-red-500/5 border-red-500/20' :
+      warning ? 'bg-orange-400/5 border-orange-400/20' :
+                'bg-green-500/5 border-green-500/15'
+    }`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <CalendarDays className={`w-3.5 h-3.5 ${urgent ? 'text-red-400' : warning ? 'text-orange-400' : 'text-green-400'}`} />
+          <span className="text-xs font-medium text-foreground">Abonnement</span>
+        </div>
+        <span className={`font-mono text-xs font-bold ${urgent ? 'text-red-400' : warning ? 'text-orange-400' : 'text-green-400'}`}>
+          {daysLeft === 0 ? 'Expire aujourd\'hui' : `${daysLeft}j restants`}
+        </span>
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full h-1.5 rounded-full bg-white/7 overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${
+            urgent  ? 'bg-gradient-to-r from-red-500 to-red-400' :
+            warning ? 'bg-gradient-to-r from-orange-400 to-amber-400' :
+                      'bg-gradient-to-r from-green-500 to-green-400'
+          }`}
+          style={{ width: `${Math.min(100, Math.max(2, (daysLeft / 365) * 100))}%` }}
+        />
+      </div>
+
+      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+        <span>Expire le {new Date(expiresAt).toLocaleDateString('fr-MA', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+        {urgent && (
+          <span className="text-red-400 font-medium flex items-center gap-1">
+            <AlertTriangle className="w-3 h-3" />
+            Renouvellement urgent
+          </span>
+        )}
+      </div>
+    </div>
+  )
 }
 
 export default function LicenseSettings() {
@@ -128,20 +173,12 @@ export default function LicenseSettings() {
 
         <div className="h-px bg-border" />
 
-        {/* Subscription expiry detail */}
+        {/* ── Subscription expiry countdown ── */}
         {isSubscriptionValid && status?.subscriptionExpiresAt && (
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <CalendarClock className="w-3.5 h-3.5" />
-              <span>Abonnement valide jusqu'au</span>
-            </div>
-            <span className={`font-semibold font-mono text-xs ${(status.daysLeft ?? 0) <= 7 ? 'text-orange-400' : 'text-green-400'}`}>
-              {new Date(status.subscriptionExpiresAt).toLocaleDateString('fr-MA')}
-              {(status.daysLeft ?? 0) <= 30 && (
-                <span className="ml-2 opacity-70">({status.daysLeft}j)</span>
-              )}
-            </span>
-          </div>
+          <ExpiryCountdown
+            expiresAt={status.subscriptionExpiresAt}
+            daysLeft={status.daysLeft ?? 0}
+          />
         )}
 
         {/* Subscription expired banner */}
@@ -175,7 +212,7 @@ export default function LicenseSettings() {
             {trialUrgent && (
               <div className="flex items-center gap-2 text-xs text-red-400">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                Activez votre licence avant expiration pour ne pas perdre l'accès
+                Activez votre licence avant expiration
               </div>
             )}
           </div>
@@ -197,14 +234,17 @@ export default function LicenseSettings() {
         {/* Activated at */}
         {isActivated && status?.activatedAt && (
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Activé le</span>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <CalendarClock className="w-3.5 h-3.5" />
+              <span>Activé le</span>
+            </div>
             <span className="font-medium text-foreground">
-              {new Date(status.activatedAt).toLocaleDateString('fr-MA')}
+              {new Date(status.activatedAt).toLocaleDateString('fr-MA', { day: '2-digit', month: 'long', year: 'numeric' })}
             </span>
           </div>
         )}
 
-        {/* Activate / Renew button */}
+        {/* Activate / Renew */}
         {canActivate && (
           <button
             onClick={() => { setShowKey(v => !v); setError(''); setKey('') }}
@@ -215,7 +255,6 @@ export default function LicenseSettings() {
           </button>
         )}
 
-        {/* Renewal button for active subscriptions */}
         {isSubscriptionValid && (
           <button
             onClick={() => { setShowKey(v => !v); setError(''); setKey('') }}
@@ -272,9 +311,7 @@ export default function LicenseSettings() {
 
         {/* Footer */}
         <div className="pt-4 border-t border-border">
-          <p className="text-xs text-muted-foreground">
-            PlayDesk v1.0.1 · SQLite local · Hors ligne
-          </p>
+          <p className="text-xs text-muted-foreground">PlayDesk v1.0.1 · SQLite local · Hors ligne</p>
         </div>
       </div>
     </div>

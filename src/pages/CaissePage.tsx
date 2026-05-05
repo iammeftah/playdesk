@@ -3,45 +3,26 @@ import { motion } from 'framer-motion'
 import { RefreshCw } from 'lucide-react'
 import { Session, Station } from '../types'
 import StationGrid from '../components/station/StationGrid'
+import { ShiftControl, Shift } from '../components/shift/ShiftPanel'
 import { Button } from '@/components/ui/button'
 
 interface StatCardProps {
-  label: string
-  value: number
+  label:   string
+  value:   number
   variant: 'green' | 'amber' | 'neutral'
-  delay: number
+  delay:   number
 }
 
 function StatCard({ label, value, variant, delay }: StatCardProps) {
-  const variantClass: Record<string, {
-    card: string
-    value: string
-    bar: string
-  }> = {
-    green: {
-      card:  'bg-green-50/60 dark:bg-green-500/5 border-green-200/60 dark:border-green-500/15',
-      value: 'text-green-600 dark:text-green-400',
-      bar:   'bg-green-500 dark:bg-green-400',
-    },
-    amber: {
-      card:  'bg-amber-50/60 dark:bg-amber-500/5 border-amber-200/60 dark:border-amber-500/15',
-      value: 'text-amber-600 dark:text-amber-400',
-      bar:   'bg-amber-500 dark:bg-amber-400',
-    },
-    neutral: {
-      card:  'bg-card border-border',
-      value: 'text-foreground',
-      bar:   'bg-border',
-    },
+  const styles: Record<string, { card: string; value: string; bar: string }> = {
+    green:   { card: 'bg-green-50/60 dark:bg-green-500/5 border-green-200/60 dark:border-green-500/15', value: 'text-green-600 dark:text-green-400', bar: 'bg-green-500 dark:bg-green-400' },
+    amber:   { card: 'bg-amber-50/60 dark:bg-amber-500/5 border-amber-200/60 dark:border-amber-500/15', value: 'text-amber-600 dark:text-amber-400', bar: 'bg-amber-500 dark:bg-amber-400' },
+    neutral: { card: 'bg-card border-border', value: 'text-foreground', bar: 'bg-border' },
   }
-
-  const c = variantClass[variant]
-
+  const c = styles[variant]
   return (
     <motion.div
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
+      initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}
       className={`rounded-xl border px-7 py-5 flex items-center justify-between ${c.card}`}
     >
       <div>
@@ -59,6 +40,16 @@ export default function CaissePage() {
   const [loading, setLoading]         = useState(true)
   const [refreshing, setRefreshing]   = useState(false)
   const [lastRefresh, setLastRefresh] = useState('')
+
+  /**
+   * Source of truth for hasActiveShift.
+   * Derived from the actual shift row (open or paused), NOT from session count.
+   * This way the station cards unlock immediately after "Ouvrir le shift"
+   * even before any session has been started.
+   * A paused shift still counts as active so ongoing sessions can be managed.
+   */
+  const [currentShift, setCurrentShift] = useState<Shift | null>(null)
+  const hasActiveShift = currentShift?.status === 'open' || currentShift?.status === 'paused'
 
   const refresh = useCallback(async (silent = false) => {
     if (!silent) setRefreshing(true)
@@ -96,9 +87,7 @@ export default function CaissePage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
+      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}
       className="p-6 flex flex-col gap-5 h-full overflow-auto"
     >
       {/* Header */}
@@ -115,6 +104,12 @@ export default function CaissePage() {
         </Button>
       </div>
 
+      {/* Shift control bar — notifies us of every shift state change */}
+      <ShiftControl
+        onRefresh={refresh}
+        onShiftChange={setCurrentShift}
+      />
+
       {/* Stat cards */}
       <div className="grid grid-cols-3 gap-3">
         <StatCard label="Actives"  value={activeSessions.length} variant="green"   delay={0}    />
@@ -122,7 +117,13 @@ export default function CaissePage() {
         <StatCard label="Libres"   value={freeStations.length}   variant="neutral" delay={0.08} />
       </div>
 
-      <StationGrid stations={stations} sessions={sessions} onRefresh={refresh} />
+      {/* Station grid */}
+      <StationGrid
+        stations={stations}
+        sessions={sessions}
+        onRefresh={refresh}
+        hasActiveShift={hasActiveShift}
+      />
     </motion.div>
   )
 }
