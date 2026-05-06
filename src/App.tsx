@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Toaster } from './components/ui/sonner'
 import { useAuthStore }    from './store/authStore'
 import { useLicenseStore } from './store/licenseStore'
 import ActivationPage from './pages/ActivationPage'
@@ -74,22 +75,30 @@ export default function App() {
 
   const canUse = activated || (trial && !expired)
   if (!canUse) return (
-    <ActivationPage
-      onActivated={() =>
-        window.playdesk.license.status().then(s =>
-          setStatus({
-            activated:   s.activated,
-            trial:       s.trial       ?? false,
-            expired:     s.expired     ?? false,
-            daysLeft:    s.daysLeft    ?? 0,
-            trialEndsAt: s.trialEndsAt ?? undefined,
-          })
-        )
-      }
-    />
+    <>
+      <ActivationPage
+        onActivated={() =>
+          window.playdesk.license.status().then(s =>
+            setStatus({
+              activated:   s.activated,
+              trial:       s.trial       ?? false,
+              expired:     s.expired     ?? false,
+              daysLeft:    s.daysLeft    ?? 0,
+              trialEndsAt: s.trialEndsAt ?? undefined,
+            })
+          )
+        }
+      />
+      <Toaster position="bottom-center" richColors theme="dark" />
+    </>
   )
 
-  if (!user) return <LoginPage />
+  if (!user) return (
+    <>
+      <LoginPage />
+      <Toaster position="bottom-center" richColors theme="dark" />
+    </>
+  )
 
   return (
     <div
@@ -119,8 +128,16 @@ export default function App() {
         </main>
       </div>
 
-      {/* Undo toasts — rendered above everything, outside the scrollable main area */}
+      {/* Undo toasts */}
       <UndoToastContainer />
+
+      {/* Global toast renderer — theme-aware */}
+      <Toaster
+        position="bottom-center"
+        richColors
+        theme={document.documentElement.classList.contains('dark') ? 'dark' : 'light'}
+        className='rounded-xl'
+      />
     </div>
   )
 }

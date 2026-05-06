@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { toast } from 'sonner'
 import { useAuthStore } from '../store/authStore'
 import { ShieldCheck, Eye, EyeOff, Camera } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -18,8 +19,7 @@ export default function ProfilePage() {
   const { user } = useAuthStore()
 
   // ── Avatar ────────────────────────────────────────────────────────────────
-  const [avatar,      setAvatar]      = useState<string>(DEFAULT_AVATAR)
-  const [avatarError, setAvatarError] = useState('')
+  const [avatar,       setAvatar]       = useState<string>(DEFAULT_AVATAR)
   const [avatarSaving, setAvatarSaving] = useState(false)
 
   useEffect(() => {
@@ -37,15 +37,14 @@ export default function ProfilePage() {
     e.target.value = ''
 
     if (file.size > 2 * 1024 * 1024) {
-      setAvatarError('Image trop grande (max 2 Mo)')
+      toast.error('Image trop grande (max 2 Mo)')
       return
     }
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
-      setAvatarError('Format accepté : PNG, JPEG, WebP')
+      toast.error('Format accepté : PNG, JPEG, WebP')
       return
     }
 
-    setAvatarError('')
     setAvatarSaving(true)
 
     const reader = new FileReader()
@@ -54,15 +53,15 @@ export default function ProfilePage() {
       const res = await window.playdesk.users.setAvatar(user.id, base64)
       if (res.success) {
         setAvatar(base64)
-        // Notify sidebar to update avatar
         window.dispatchEvent(new CustomEvent('playdesk:avatar-updated', { detail: base64 }))
+        toast.success('Avatar mis à jour')
       } else {
-        setAvatarError(res.error ?? 'Erreur lors de l\'upload')
+        toast.error(res.error ?? "Erreur lors de l'upload")
       }
       setAvatarSaving(false)
     }
     reader.onerror = () => {
-      setAvatarError('Impossible de lire le fichier')
+      toast.error('Impossible de lire le fichier')
       setAvatarSaving(false)
     }
     reader.readAsDataURL(file)
@@ -75,6 +74,9 @@ export default function ProfilePage() {
     if (res.success) {
       setAvatar(DEFAULT_AVATAR)
       window.dispatchEvent(new CustomEvent('playdesk:avatar-updated', { detail: DEFAULT_AVATAR }))
+      toast.success('Avatar réinitialisé')
+    } else {
+      toast.error("Erreur lors de la réinitialisation")
     }
     setAvatarSaving(false)
   }
@@ -89,31 +91,25 @@ export default function ProfilePage() {
   const [showCurrent, setShowCurrent] = useState(false)
   const [showNew,     setShowNew]     = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-
-  const [error,   setError]   = useState('')
-  const [success, setSuccess] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [loading,     setLoading]     = useState(false)
 
   const resetForm = () => setForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
 
   const handleSave = async () => {
-    setError('')
-    setSuccess(false)
-
     if (!form.currentPassword || !form.newPassword || !form.confirmPassword) {
-      setError('Tous les champs sont requis.')
+      toast.error('Tous les champs sont requis.')
       return
     }
     if (form.newPassword.length < 6) {
-      setError('Le nouveau mot de passe doit contenir au moins 6 caractères.')
+      toast.error('Le nouveau mot de passe doit contenir au moins 6 caractères.')
       return
     }
     if (form.newPassword !== form.confirmPassword) {
-      setError('Les deux nouveaux mots de passe ne correspondent pas.')
+      toast.error('Les deux nouveaux mots de passe ne correspondent pas.')
       return
     }
     if (form.newPassword === form.currentPassword) {
-      setError('Le nouveau mot de passe doit être différent de l\'actuel.')
+      toast.error("Le nouveau mot de passe doit être différent de l'actuel.")
       return
     }
 
@@ -125,10 +121,10 @@ export default function ProfilePage() {
     setLoading(false)
 
     if (res.success) {
-      setSuccess(true)
+      toast.success('Mot de passe mis à jour avec succès.')
       resetForm()
     } else {
-      setError(res.error ?? 'Erreur lors de la mise à jour.')
+      toast.error(res.error ?? 'Erreur lors de la mise à jour.')
     }
   }
 
@@ -226,11 +222,6 @@ export default function ProfilePage() {
                 {user?.role}
               </span>
 
-              {/* Avatar feedback */}
-              {avatarError && (
-                <p className="text-[11px] text-red-500 dark:text-red-400 mt-1.5">{avatarError}</p>
-              )}
-
               {/* Reset avatar link */}
               {!isDefaultAvatar && !avatarSaving && (
                 <button
@@ -282,7 +273,7 @@ export default function ProfilePage() {
                 <Input
                   type={showCurrent ? 'text' : 'password'}
                   value={form.currentPassword}
-                  onChange={e => { setForm(f => ({ ...f, currentPassword: e.target.value })); setError(''); setSuccess(false) }}
+                  onChange={e => setForm(f => ({ ...f, currentPassword: e.target.value }))}
                   placeholder="Votre mot de passe actuel"
                   className="pr-9"
                 />
@@ -304,7 +295,7 @@ export default function ProfilePage() {
                 <Input
                   type={showNew ? 'text' : 'password'}
                   value={form.newPassword}
-                  onChange={e => { setForm(f => ({ ...f, newPassword: e.target.value })); setError(''); setSuccess(false) }}
+                  onChange={e => setForm(f => ({ ...f, newPassword: e.target.value }))}
                   placeholder="6 caractères minimum"
                   className="pr-9"
                 />
@@ -326,7 +317,7 @@ export default function ProfilePage() {
                 <Input
                   type={showConfirm ? 'text' : 'password'}
                   value={form.confirmPassword}
-                  onChange={e => { setForm(f => ({ ...f, confirmPassword: e.target.value })); setError(''); setSuccess(false) }}
+                  onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))}
                   placeholder="Répétez le nouveau mot de passe"
                   className="pr-9"
                   onKeyDown={e => e.key === 'Enter' && handleSave()}
@@ -341,16 +332,6 @@ export default function ProfilePage() {
                 </button>
               </div>
             </div>
-
-            {/* Feedback */}
-            {error && (
-              <p className="text-xs text-red-500 dark:text-red-400">{error}</p>
-            )}
-            {success && (
-              <p className="text-xs text-green-600 dark:text-green-400">
-                Mot de passe mis à jour avec succès.
-              </p>
-            )}
 
             <div className="flex justify-end pt-1">
               <Button onClick={handleSave} disabled={loading} size="sm">

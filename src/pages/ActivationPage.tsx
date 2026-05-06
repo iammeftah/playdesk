@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ShieldCheck, Clock, KeyRound, ArrowRight, Loader2, AlertCircle } from 'lucide-react'
+import { toast } from 'sonner'
+import { ShieldCheck, Clock, KeyRound, ArrowRight, Loader2 } from 'lucide-react'
 
 type Screen = 'choice' | 'activate'
 
@@ -11,14 +12,12 @@ export default function ActivationPage({ onActivated }: Props) {
   const [screen, setScreen]   = useState<Screen>('choice')
   const [key, setKey]         = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
 
   // ── Format key as user types: PLAY-XXXX-XXXX-XXXX
   const handleKeyInput = (raw: string) => {
     const clean = raw.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 16)
     const parts = clean.match(/.{1,4}/g) ?? []
     setKey(parts.join('-'))
-    setError('')
   }
 
   // ── Start 7-day trial
@@ -29,10 +28,10 @@ export default function ActivationPage({ onActivated }: Props) {
       if (res.success) {
         onActivated()
       } else {
-        setError(res.error ?? 'Erreur inconnue')
+        toast.error(res.error ?? 'Erreur inconnue')
       }
     } catch {
-      setError('Impossible de démarrer l\'essai')
+      toast.error("Impossible de démarrer l'essai")
     }
     setLoading(false)
   }
@@ -40,20 +39,19 @@ export default function ActivationPage({ onActivated }: Props) {
   // ── Activate with serial key
   const handleActivate = async () => {
     if (key.length < 19) {
-      setError('Veuillez entrer une clé complète')
+      toast.error('Veuillez entrer une clé complète')
       return
     }
     setLoading(true)
-    setError('')
     try {
       const res = await window.playdesk.license.activate(key)
       if (res.success) {
         onActivated()
       } else {
-        setError(res.error ?? 'Clé invalide')
+        toast.error(res.error ?? 'Clé invalide')
       }
     } catch {
-      setError('Erreur lors de l\'activation')
+      toast.error("Erreur lors de l'activation")
     }
     setLoading(false)
   }
@@ -115,7 +113,7 @@ export default function ActivationPage({ onActivated }: Props) {
 
             {/* Activate card */}
             <button
-              onClick={() => { setScreen('activate'); setError('') }}
+              onClick={() => setScreen('activate')}
               className="w-full rounded-xl p-5 text-left transition-all"
               style={{
                 background: 'rgba(255,255,255,0.03)',
@@ -139,13 +137,6 @@ export default function ActivationPage({ onActivated }: Props) {
               </div>
             </button>
           </div>
-
-          {error && (
-            <div className="flex items-center gap-2 text-sm" style={{ color: '#ef4444' }}>
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              {error}
-            </div>
-          )}
         </div>
       )}
 
@@ -190,26 +181,18 @@ export default function ActivationPage({ onActivated }: Props) {
               className="w-full rounded-lg px-4 py-3 text-center font-mono text-base outline-none transition-all"
               style={{
                 background: 'rgba(0,0,0,0.3)',
-                border: error ? '1px solid #ef4444' : '1px solid rgba(127,119,221,0.3)',
+                border: '1px solid rgba(127,119,221,0.3)',
                 color: '#fff',
                 letterSpacing: '0.1em',
               }}
-              onFocus={e => { if (!error) e.target.style.borderColor = 'rgba(127,119,221,0.7)' }}
-              onBlur={e  => { if (!error) e.target.style.borderColor = 'rgba(127,119,221,0.3)' }}
+              onFocus={e => { e.target.style.borderColor = 'rgba(127,119,221,0.7)' }}
+              onBlur={e  => { e.target.style.borderColor = 'rgba(127,119,221,0.3)' }}
             />
-
-            {/* Error */}
-            {error && (
-              <div className="flex items-center gap-2 text-sm" style={{ color: '#ef4444' }}>
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                {error}
-              </div>
-            )}
 
             {/* Buttons */}
             <div className="flex gap-2">
               <button
-                onClick={() => { setScreen('choice'); setKey(''); setError('') }}
+                onClick={() => { setScreen('choice'); setKey('') }}
                 className="flex-1 rounded-lg py-2.5 text-sm transition-colors"
                 style={{ background: 'rgba(255,255,255,0.05)', color: '#888780', border: '1px solid rgba(255,255,255,0.08)' }}
               >
