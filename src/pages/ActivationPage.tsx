@@ -13,14 +13,12 @@ export default function ActivationPage({ onActivated }: Props) {
   const [key, setKey]         = useState('')
   const [loading, setLoading] = useState(false)
 
-  // ── Format key as user types: PLAY-XXXX-XXXX-XXXX
   const handleKeyInput = (raw: string) => {
     const clean = raw.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 16)
     const parts = clean.match(/.{1,4}/g) ?? []
     setKey(parts.join('-'))
   }
 
-  // ── Start 7-day trial
   const handleTrial = async () => {
     setLoading(true)
     try {
@@ -36,7 +34,6 @@ export default function ActivationPage({ onActivated }: Props) {
     setLoading(false)
   }
 
-  // ── Activate with serial key
   const handleActivate = async () => {
     if (key.length < 19) {
       toast.error('Veuillez entrer une clé complète')
@@ -67,14 +64,14 @@ export default function ActivationPage({ onActivated }: Props) {
           <div className="text-center">
             <h1 className="text-4xl font-bold tracking-widest mb-1">
               <span className="text-white">PLAY</span>
-              <span style={{ color: '#7F77DD' }}>DESK</span>
+              <span style={{ color: 'var(--neon)' }}>DESK</span>
             </h1>
-            <p className="text-sm tracking-widest" style={{ color: '#888780' }}>
+            <p className="text-sm tracking-widest" style={{ color: 'var(--muted-foreground)' }}>
               GESTION DE SALLE DE JEUX
             </p>
           </div>
 
-          <p className="text-center text-sm" style={{ color: '#888780' }}>
+          <p className="text-center text-sm" style={{ color: 'var(--muted-foreground)' }}>
             Bienvenue ! Choisissez comment vous souhaitez démarrer.
           </p>
 
@@ -87,27 +84,27 @@ export default function ActivationPage({ onActivated }: Props) {
               disabled={loading}
               className="w-full rounded-xl p-5 text-left transition-all group"
               style={{
-                background: 'rgba(127,119,221,0.08)',
-                border: '1px solid rgba(127,119,221,0.25)',
+                background: 'var(--neon-dim)',
+                border: '1px solid var(--neon-mid)',
               }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(127,119,221,0.6)')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(127,119,221,0.25)')}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--neon)')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--neon-mid)')}
             >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: 'rgba(127,119,221,0.15)' }}>
+                  style={{ background: 'var(--neon-mid)' }}>
                   {loading
-                    ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#7F77DD' }} />
-                    : <Clock className="w-5 h-5" style={{ color: '#7F77DD' }} />
+                    ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--neon)' }} />
+                    : <Clock className="w-5 h-5" style={{ color: 'var(--neon)' }} />
                   }
                 </div>
                 <div className="flex-1">
                   <p className="font-semibold text-sm text-white">Essai gratuit — 7 jours</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#888780' }}>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
                     Accès complet sans engagement, aucune carte requise
                   </p>
                 </div>
-                <ArrowRight className="w-4 h-4 shrink-0" style={{ color: '#7F77DD' }} />
+                <ArrowRight className="w-4 h-4 shrink-0" style={{ color: 'var(--neon)' }} />
               </div>
             </button>
 
@@ -125,15 +122,15 @@ export default function ActivationPage({ onActivated }: Props) {
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
                   style={{ background: 'rgba(255,255,255,0.05)' }}>
-                  <KeyRound className="w-5 h-5" style={{ color: '#B4B2A9' }} />
+                  <KeyRound className="w-5 h-5" style={{ color: 'var(--muted-foreground)' }} />
                 </div>
                 <div className="flex-1">
                   <p className="font-semibold text-sm text-white">J'ai une clé de série</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#888780' }}>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
                     Activer avec votre clé PLAY-XXXX-XXXX-XXXX
                   </p>
                 </div>
-                <ArrowRight className="w-4 h-4 shrink-0" style={{ color: '#B4B2A9' }} />
+                <ArrowRight className="w-4 h-4 shrink-0" style={{ color: 'var(--muted-foreground)' }} />
               </div>
             </button>
           </div>
@@ -148,9 +145,9 @@ export default function ActivationPage({ onActivated }: Props) {
           <div className="text-center">
             <h1 className="text-4xl font-bold tracking-widest mb-1">
               <span className="text-white">PLAY</span>
-              <span style={{ color: '#7F77DD' }}>DESK</span>
+              <span style={{ color: 'var(--neon)' }}>DESK</span>
             </h1>
-            <p className="text-sm tracking-widest" style={{ color: '#888780' }}>
+            <p className="text-sm tracking-widest" style={{ color: 'var(--muted-foreground)' }}>
               ACTIVATION DE LICENCE
             </p>
           </div>
@@ -160,12 +157,12 @@ export default function ActivationPage({ onActivated }: Props) {
 
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg flex items-center justify-center"
-                style={{ background: 'rgba(127,119,221,0.15)' }}>
-                <ShieldCheck className="w-5 h-5" style={{ color: '#7F77DD' }} />
+                style={{ background: 'var(--neon-mid)' }}>
+                <ShieldCheck className="w-5 h-5" style={{ color: 'var(--neon)' }} />
               </div>
               <div>
                 <p className="text-sm font-semibold text-white">Entrez votre clé de série</p>
-                <p className="text-xs" style={{ color: '#888780' }}>Format : PLAY-XXXX-XXXX-XXXX</p>
+                <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Format : PLAY-XXXX-XXXX-XXXX</p>
               </div>
             </div>
 
@@ -181,12 +178,12 @@ export default function ActivationPage({ onActivated }: Props) {
               className="w-full rounded-lg px-4 py-3 text-center font-mono text-base outline-none transition-all"
               style={{
                 background: 'rgba(0,0,0,0.3)',
-                border: '1px solid rgba(127,119,221,0.3)',
+                border: '1px solid var(--neon-mid)',
                 color: '#fff',
                 letterSpacing: '0.1em',
               }}
-              onFocus={e => { e.target.style.borderColor = 'rgba(127,119,221,0.7)' }}
-              onBlur={e  => { e.target.style.borderColor = 'rgba(127,119,221,0.3)' }}
+              onFocus={e => { e.target.style.borderColor = 'var(--neon)' }}
+              onBlur={e  => { e.target.style.borderColor = 'var(--neon-mid)' }}
             />
 
             {/* Buttons */}
@@ -194,7 +191,7 @@ export default function ActivationPage({ onActivated }: Props) {
               <button
                 onClick={() => { setScreen('choice'); setKey('') }}
                 className="flex-1 rounded-lg py-2.5 text-sm transition-colors"
-                style={{ background: 'rgba(255,255,255,0.05)', color: '#888780', border: '1px solid rgba(255,255,255,0.08)' }}
+                style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--muted-foreground)', border: '1px solid rgba(255,255,255,0.08)' }}
               >
                 Retour
               </button>
@@ -203,7 +200,7 @@ export default function ActivationPage({ onActivated }: Props) {
                 disabled={loading || key.length < 19}
                 className="flex-1 rounded-lg py-2.5 text-sm font-semibold flex items-center justify-center gap-2 transition-all"
                 style={{
-                  background: loading || key.length < 19 ? 'rgba(127,119,221,0.3)' : '#7F77DD',
+                  background: loading || key.length < 19 ? 'var(--neon-mid)' : 'var(--neon)',
                   color: '#fff',
                   cursor: loading || key.length < 19 ? 'not-allowed' : 'pointer',
                 }}

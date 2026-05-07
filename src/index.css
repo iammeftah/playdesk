@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
@@ -97,6 +98,9 @@
   --chart-4: #4338ca;
   --chart-5: #312e81;
 
+  /* Font family */
+  --app-font:           'Geist Variable', sans-serif;
+
   /* Titlebar in light */
   --titlebar-bg:        rgba(255, 255, 255, 0.92);
   --titlebar-border:    #e5e5e5;
@@ -168,7 +172,7 @@
   button:focus-visible,
   [role="button"]:focus-visible,
   a:focus-visible {
-    box-shadow: 0 0 0 1.5px rgba(99, 102, 241, 0.5) !important;
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--neon) 50%, transparent) !important;
     outline: none !important;
   }
 
@@ -206,6 +210,12 @@
   select option { background-color: var(--popover); }
 }
 
+/* ─── DYNAMIC FONT ─────────────────────────────────────────────────────── */
+* { font-family: var(--app-font) !important; }
+
+/* Escape hatch for font catalogue previews — set --literal-font inline, this wins */
+.font-literal { font-family: var(--literal-font) !important; }
+
 /* ─── TITLEBAR DRAG ─────────────────────────────────────────────────────── */
 .titlebar-drag            { -webkit-app-region: drag; }
 .titlebar-drag *          { -webkit-app-region: no-drag; }
@@ -221,11 +231,11 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
 }
 [data-slot="card"]:hover {
-  border-color: rgba(99, 102, 241, 0.2) !important;
+  border-color: color-mix(in srgb, var(--neon) 20%, transparent) !important;
   box-shadow: 0 0 20px var(--neon-dim), 0 4px 24px rgba(0,0,0,0.06) !important;
 }
 .dark [data-slot="card"]:hover {
-  box-shadow: 0 0 24px rgba(129, 140, 248, 0.06), 0 8px 40px rgba(0,0,0,0.5) !important;
+  box-shadow: 0 0 24px color-mix(in srgb, var(--neon) 6%, transparent), 0 8px 40px rgba(0,0,0,0.5) !important;
 }
 
 [data-slot="button"] {
@@ -241,7 +251,7 @@
   transition: border-color 0.15s ease !important;
 }
 [data-slot="input"]:focus {
-  border-color: rgba(99, 102, 241, 0.5) !important;
+  border-color: color-mix(in srgb, var(--neon) 50%, transparent) !important;
   box-shadow: none !important;
 }
 
@@ -272,12 +282,12 @@
 [data-slot="dialog-content"] {
   background: var(--card) !important;
   border: 1px solid var(--border) !important;
-  box-shadow: 0 0 0 1px rgba(99,102,241,0.06), 0 20px 60px rgba(0,0,0,0.15) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--neon) 6%, transparent), 0 20px 60px rgba(0,0,0,0.15) !important;
   border-radius: 14px !important;
 }
 .dark [data-slot="alert-dialog-content"],
 .dark [data-slot="dialog-content"] {
-  box-shadow: 0 0 0 1px rgba(129,140,248,0.08), 0 24px 64px rgba(0,0,0,0.8) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--neon) 8%, transparent), 0 24px 64px rgba(0,0,0,0.8) !important;
 }
 
 /* ─── UTILITY CARD CLASSES ──────────────────────────────────────────────── */
@@ -288,7 +298,7 @@
   transition: box-shadow 0.25s ease, border-color 0.25s ease;
 }
 .glow-card:hover {
-  border-color: rgba(99, 102, 241, 0.2);
+  border-color: color-mix(in srgb, var(--neon) 20%, transparent);
   box-shadow: 0 0 20px var(--neon-dim), 0 4px 20px rgba(0,0,0,0.06);
 }
 
@@ -327,7 +337,7 @@
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 .stat-card:hover {
-  border-color: rgba(99, 102, 241, 0.2);
+  border-color: color-mix(in srgb, var(--neon) 20%, transparent);
   box-shadow: 0 0 20px var(--neon-dim), 0 4px 20px rgba(0,0,0,0.06);
 }
 
@@ -368,7 +378,7 @@
   user-select: none;
 }
 .dark .cal-popup {
-  box-shadow: 0 0 0 1px rgba(129,140,248,0.08), 0 20px 60px rgba(0,0,0,0.8);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--neon) 8%, transparent), 0 20px 60px rgba(0,0,0,0.8);
 }
 .cal-day {
   width: 34px; height: 34px;
@@ -400,7 +410,7 @@
   transition: border-color 0.15s ease;
 }
 .settings-input:focus {
-  border-color: rgba(99, 102, 241, 0.5);
+  border-color: color-mix(in srgb, var(--neon) 50%, transparent);
   outline: none;
 }
 
@@ -413,7 +423,7 @@
   overflow: hidden;
 }
 .theme-option:hover {
-  border-color: rgba(99, 102, 241, 0.3);
+  border-color: color-mix(in srgb, var(--neon) 30%, transparent);
 }
 .theme-option.selected {
   border-color: var(--neon);

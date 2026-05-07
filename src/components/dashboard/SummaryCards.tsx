@@ -24,7 +24,7 @@ export default function SummaryCards({ data }: { data: any }) {
           style={{
             padding:    '20px 24px',
             background: c.accent ? 'var(--neon-dim)' : 'var(--card)',
-            border:     c.accent ? '1px solid rgba(99,102,241,0.2)' : '1px solid var(--border)',
+            border:     c.accent ? '1px solid var(--neon-mid)' : '1px solid var(--border)',
           }}
         >
           <p

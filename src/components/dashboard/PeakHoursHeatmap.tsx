@@ -94,7 +94,9 @@ export default function PeakHoursHeatmap({ data }: { data: HeatPoint[] }) {
                     key={`${di}-${hi}`}
                     title={`${DAYS[di]} ${h}h — ${val} session${val !== 1 ? 's' : ''}`}
                     style={{
-                      background:   `rgba(99, 102, 241, ${opacity})`,
+                      // Use --neon-dim as base, then layer opacity on top via a pseudo-approach:
+                      // We set background to --neon with dynamic opacity
+                      background:   `color-mix(in srgb, var(--neon) ${Math.round(opacity * 100)}%, transparent)`,
                       borderRadius: '3px',
                       transition:   'opacity 0.15s',
                     }}
@@ -114,7 +116,7 @@ export default function PeakHoursHeatmap({ data }: { data: HeatPoint[] }) {
             flex: 1,
             height: '5px',
             borderRadius: '3px',
-            background: 'linear-gradient(to right, rgba(99,102,241,0.04), rgba(99,102,241,1))',
+            background: 'linear-gradient(to right, var(--neon-dim), var(--neon))',
           }}
         />
         <span style={{ fontSize: '10px', color: 'var(--muted-foreground)' }}>Intense</span>

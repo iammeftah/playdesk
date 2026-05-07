@@ -12,14 +12,7 @@ import {
   DialogFooter,
 } from '../ui/dialog'
 import { Button } from '../ui/button'
-
-const DEFAULT_AVATAR = `data:image/svg+xml,${encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
-    <rect width="40" height="40" rx="10" fill="#1e2035"/>
-    <circle cx="20" cy="15" r="7" fill="#3d4068"/>
-    <path d="M6 36c0-7.732 6.268-14 14-14s14 6.268 14 14" fill="#3d4068"/>
-  </svg>`
-)}`
+import { getDefaultAvatar } from '@/lib/defaultAvatar'
 
 export default function TitleBar() {
   const { user, logout }               = useAuthStore()
@@ -30,25 +23,42 @@ export default function TitleBar() {
   const [groupHovered, setGroupHovered] = useState(false)
 
   // ── Avatar state ──────────────────────────────────────────────────────────
-  const [titlebarAvatar, setTitlebarAvatar] = useState<string>(DEFAULT_AVATAR)
+  // Init lazily so --neon is already applied by initAccent()
+  const [titlebarAvatar, setTitlebarAvatar] = useState<string>(() => getDefaultAvatar())
+  // Track whether the user has uploaded a real custom avatar
+  const [hasCustomAvatar, setHasCustomAvatar] = useState(false)
 
   // Load avatar on mount
   useEffect(() => {
     if (!user?.id) return
     window.playdesk.users.getAvatar(user.id).then(res => {
-      setTitlebarAvatar(res.avatar ?? DEFAULT_AVATAR)
+      if (res.avatar) {
+        setTitlebarAvatar(res.avatar)
+        setHasCustomAvatar(true)
+      }
     })
   }, [user?.id])
 
-  // Listen for avatar updates from ProfilePage
+  // Listen for avatar uploads from ProfilePage
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<string>).detail
-      setTitlebarAvatar(detail || DEFAULT_AVATAR)
+      if (detail) {
+        setTitlebarAvatar(detail)
+        setHasCustomAvatar(true)
+      }
     }
     window.addEventListener('playdesk:avatar-updated', handler)
     return () => window.removeEventListener('playdesk:avatar-updated', handler)
   }, [])
+
+  // Regenerate default avatar when accent color changes
+  useEffect(() => {
+    if (hasCustomAvatar) return
+    const handler = () => setTitlebarAvatar(getDefaultAvatar())
+    window.addEventListener('playdesk:accent-updated', handler)
+    return () => window.removeEventListener('playdesk:accent-updated', handler)
+  }, [hasCustomAvatar])
 
   useEffect(() => {
     const check = () => {

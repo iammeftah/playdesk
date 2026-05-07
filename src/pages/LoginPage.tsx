@@ -86,7 +86,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <h1 className="font-sans text-4xl font-bold text-foreground tracking-[0.15em] uppercase">
-            Play<span className="text-indigo-400">Desk</span>
+            Play<span style={{ color: 'var(--neon)' }}>Desk</span>
           </h1>
           <p className="text-muted-foreground text-xs mt-1.5 tracking-widest">
             Connectez-vous pour continuer
@@ -141,7 +141,8 @@ export default function LoginPage() {
           <Button
             onClick={handleLogin}
             disabled={loading || !username || !password}
-            className="w-full mt-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors flex items-center justify-center gap-2"
+            className="w-full mt-1 text-white font-semibold transition-colors flex items-center justify-center gap-2"
+            style={{ background: 'var(--neon)' }}
           >
             {loading
               ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Connexion...</>

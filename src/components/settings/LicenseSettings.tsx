@@ -205,7 +205,7 @@ export default function LicenseSettings() {
             </div>
             <div className="w-full h-1.5 rounded-full bg-white/7 overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all ${trialUrgent ? 'bg-gradient-to-r from-red-500 to-orange-500' : 'bg-gradient-to-r from-indigo-400 to-yellow-400'}`}
+                className={`h-full rounded-full transition-all ${trialUrgent ? 'bg-gradient-to-r from-red-500 to-orange-500' : 'bg-gradient-to-r from-accent-400 to-accent-200'}`}
                 style={{ width: `${Math.max(2, (days / 7) * 100)}%` }}
               />
             </div>

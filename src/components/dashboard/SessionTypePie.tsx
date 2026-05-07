@@ -2,10 +2,20 @@ import { useState } from 'react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { formatMAD } from '../../lib/utils'
 
-const TYPE_META: Record<string, { label: string; color: string; dimColor: string }> = {
-  match: { label: 'Match',  color: 'rgba(99,102,241,1)',   dimColor: 'rgba(99,102,241,0.15)'  },
-  temps: { label: 'Temps',  color: 'rgba(251,191,36,1)',   dimColor: 'rgba(251,191,36,0.15)'  },
-  libre: { label: 'Libre',  color: 'rgba(167,139,250,0.7)', dimColor: 'rgba(167,139,250,0.12)' },
+// match/temps/libre keep their own semantic colors — only the "match" type
+// previously used the accent indigo; replace it with var(--neon) at runtime.
+function getNeonColor() {
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue('--neon').trim() || '#6366f1'
+}
+
+function getTypeMeta() {
+  const neon = getNeonColor()
+  return {
+    match: { label: 'Match', color: neon,                    dimColor: 'color-mix(in srgb, ' + neon + ' 15%, transparent)' },
+    temps: { label: 'Temps', color: 'rgba(251,191,36,1)',    dimColor: 'rgba(251,191,36,0.15)'   },
+    libre: { label: 'Libre', color: 'rgba(167,139,250,0.7)', dimColor: 'rgba(167,139,250,0.12)'  },
+  } as Record<string, { label: string; color: string; dimColor: string }>
 }
 
 interface TypeStat {
@@ -21,7 +31,7 @@ interface Props {
 const CustomTooltip = ({ active, payload }: any) => {
   if (!active || !payload?.length) return null
   const d    = payload[0].payload
-  const meta = TYPE_META[d.type] ?? { label: d.type, color: '#888' }
+  const meta = getTypeMeta()[d.type] ?? { label: d.type, color: '#888' }
   return (
     <div
       className="text-xs px-3 py-2 rounded-lg"
@@ -51,6 +61,8 @@ export default function SessionTypePie({ byType }: Props) {
       Aucune donnée
     </div>
   )
+
+  const TYPE_META = getTypeMeta()
 
   const total = byType.reduce((s, t) => s + (t.c ?? 0), 0) || 1
   const data  = byType.map(t => ({

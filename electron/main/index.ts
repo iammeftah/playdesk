@@ -8,6 +8,8 @@ import '../ipc/stations'
 import '../ipc/sessions'
 import '../ipc/dashboard'
 import '../ipc/users'
+import '../ipc/danger'
+
 
 const isDev = !app.isPackaged
 

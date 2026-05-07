@@ -22,11 +22,11 @@ export default function StationUtilization({ data }: { data: StationStat[] }) {
       {/* Legend */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-1.5">
-          <div style={{ width: 8, height: 8, borderRadius: '2px', background: 'rgba(99,102,241,0.85)' }} />
+          <div style={{ width: 8, height: 8, borderRadius: '2px', background: 'var(--neon)' }} />
           <span style={{ fontSize: '10px', color: 'var(--muted-foreground)' }}>Sessions</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div style={{ width: 8, height: 8, borderRadius: '2px', background: 'rgba(99,102,241,0.3)' }} />
+          <div style={{ width: 8, height: 8, borderRadius: '2px', background: 'var(--neon-mid)' }} />
           <span style={{ fontSize: '10px', color: 'var(--muted-foreground)' }}>Revenus</span>
         </div>
       </div>
@@ -72,7 +72,8 @@ export default function StationUtilization({ data }: { data: StationStat[] }) {
                       height:       '100%',
                       width:        `${sessionPct}%`,
                       borderRadius: '3px',
-                      background:   'rgba(99,102,241,0.85)',
+                      background:   'var(--neon)',
+                      opacity:      0.85,
                       transition:   'width 0.4s ease',
                     }}
                   />
@@ -92,7 +93,7 @@ export default function StationUtilization({ data }: { data: StationStat[] }) {
                       height:       '100%',
                       width:        `${revenuePct}%`,
                       borderRadius: '3px',
-                      background:   'rgba(99,102,241,0.3)',
+                      background:   'var(--neon-mid)',
                       transition:   'width 0.4s ease',
                     }}
                   />

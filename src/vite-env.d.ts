@@ -97,5 +97,12 @@ interface Window {
       getAvatar:      (id: number) => Promise<{ success: boolean; avatar: string | null; error?: string }>
       setAvatar:      (id: number, base64: string) => Promise<{ success: boolean; error?: string }>
     }
+
+    danger: {
+      exportCsv:   () => Promise<{ success: boolean; path?: string; error?: string }>
+      exportExcel: () => Promise<{ success: boolean; path?: string; error?: string }>
+      resetDb:     () => Promise<{ success: boolean; error?: string }>
+      relaunch:    () => Promise<void>
+    }
   }
 }

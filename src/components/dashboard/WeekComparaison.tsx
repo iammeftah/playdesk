@@ -43,7 +43,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 }
 
 export default function WeekComparison() {
-  const [data, setData]     = useState<ComparisonData | null>(null)
+  const [data, setData]       = useState<ComparisonData | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -64,6 +64,10 @@ export default function WeekComparison() {
     </div>
   )
 
+  // Read accent color at render time
+  const neonColor = getComputedStyle(document.documentElement)
+    .getPropertyValue('--neon').trim() || '#6366f1'
+
   // Build chart data — align by day-of-week index (0=Mon…6=Sun)
   const chartData = DAY_LABELS.map((label, i) => {
     const thisDay = data.thisWeek.days[i] as DayData | undefined
@@ -77,7 +81,7 @@ export default function WeekComparison() {
     }
   })
 
-  const isDark = document.documentElement.classList.contains('dark')
+  const isDark  = document.documentElement.classList.contains('dark')
   const gridClr = isDark ? '#1e1e1e' : '#e5e5e5'
   const tickClr = isDark ? '#737373' : '#a3a3a3'
 
@@ -112,8 +116,8 @@ export default function WeekComparison() {
           <YAxis tick={{ fill: tickClr, fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={v => `${v}`} width={40} />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }} />
           <Legend wrapperStyle={{ fontSize: 11, color: tickClr }} />
-          <Bar dataKey="Cette semaine" fill="rgba(99,102,241,0.85)" radius={[3, 3, 0, 0]} maxBarSize={20} />
-          <Bar dataKey="Semaine préc." fill="rgba(99,102,241,0.25)" radius={[3, 3, 0, 0]} maxBarSize={20} />
+          <Bar dataKey="Cette semaine" fill={neonColor}                        radius={[3, 3, 0, 0]} maxBarSize={20} opacity={0.85} />
+          <Bar dataKey="Semaine préc." fill={neonColor}                        radius={[3, 3, 0, 0]} maxBarSize={20} opacity={0.25} />
         </BarChart>
       </ResponsiveContainer>
     </div>

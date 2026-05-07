@@ -12,6 +12,7 @@ import TitleBar       from './components/layout/TitleBar'
 import Sidebar        from './components/layout/Sidebar'
 import UndoToastContainer from './components/common/undoToast'
 import ProfilePage from './pages/ProfilePage'
+import { initAccent } from './store/useAccentColor'
 
 export type Page = 'caisse' | 'dashboard' | 'settings' | 'profile'
 
@@ -34,7 +35,9 @@ function initTheme() {
   }
 }
 
+// ── Run both inits before React renders ──────────────────────────────────────
 initTheme()
+initAccent()
 
 export default function App() {
   const { user }       = useAuthStore()

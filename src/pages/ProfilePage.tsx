@@ -6,36 +6,40 @@ import { ShieldCheck, Eye, EyeOff, Camera } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input }  from '@/components/ui/input'
 import { Label }  from '@/components/ui/label'
-
-const DEFAULT_AVATAR = `data:image/svg+xml,${encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
-    <rect width="40" height="40" rx="10" fill="#1e2035"/>
-    <circle cx="20" cy="15" r="7" fill="#3d4068"/>
-    <path d="M6 36c0-7.732 6.268-14 14-14s14 6.268 14 14" fill="#3d4068"/>
-  </svg>`
-)}`
+import { getDefaultAvatar } from '@/lib/defaultAvatar'
 
 export default function ProfilePage() {
   const { user } = useAuthStore()
 
   // ── Avatar ────────────────────────────────────────────────────────────────
-  const [avatar,       setAvatar]       = useState<string>(DEFAULT_AVATAR)
+  // Init lazily so --neon is already applied by initAccent()
+  const [avatar,       setAvatar]       = useState<string>(() => getDefaultAvatar())
   const [avatarSaving, setAvatarSaving] = useState(false)
+  // Track whether user has a real custom avatar (don't override on accent change)
+  const [hasCustomAvatar, setHasCustomAvatar] = useState(false)
 
   useEffect(() => {
     if (!user?.id) return
     window.playdesk.users.getAvatar(user.id).then(res => {
-      if (res.avatar) setAvatar(res.avatar)
+      if (res.avatar) {
+        setAvatar(res.avatar)
+        setHasCustomAvatar(true)
+      }
     })
   }, [user?.id])
+
+  // Regenerate default avatar when accent color changes
+  useEffect(() => {
+    if (hasCustomAvatar) return
+    const handler = () => setAvatar(getDefaultAvatar())
+    window.addEventListener('playdesk:accent-updated', handler)
+    return () => window.removeEventListener('playdesk:accent-updated', handler)
+  }, [hasCustomAvatar])
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !user?.id) return
-
-    // Reset input so same file can be re-selected
     e.target.value = ''
-
     if (file.size > 2 * 1024 * 1024) {
       toast.error('Image trop grande (max 2 Mo)')
       return
@@ -44,15 +48,14 @@ export default function ProfilePage() {
       toast.error('Format accepté : PNG, JPEG, WebP')
       return
     }
-
     setAvatarSaving(true)
-
     const reader = new FileReader()
     reader.onload = async () => {
       const base64 = reader.result as string
       const res = await window.playdesk.users.setAvatar(user.id, base64)
       if (res.success) {
         setAvatar(base64)
+        setHasCustomAvatar(true)
         window.dispatchEvent(new CustomEvent('playdesk:avatar-updated', { detail: base64 }))
         toast.success('Avatar mis à jour')
       } else {
@@ -72,8 +75,10 @@ export default function ProfilePage() {
     setAvatarSaving(true)
     const res = await window.playdesk.users.setAvatar(user.id, '')
     if (res.success) {
-      setAvatar(DEFAULT_AVATAR)
-      window.dispatchEvent(new CustomEvent('playdesk:avatar-updated', { detail: DEFAULT_AVATAR }))
+      const fresh = getDefaultAvatar()
+      setAvatar(fresh)
+      setHasCustomAvatar(false)
+      window.dispatchEvent(new CustomEvent('playdesk:avatar-updated', { detail: fresh }))
       toast.success('Avatar réinitialisé')
     } else {
       toast.error("Erreur lors de la réinitialisation")
@@ -112,14 +117,12 @@ export default function ProfilePage() {
       toast.error("Le nouveau mot de passe doit être différent de l'actuel.")
       return
     }
-
     setLoading(true)
     const res = await window.playdesk.users.changePassword({
       currentPassword: form.currentPassword,
       newPassword:     form.newPassword,
     })
     setLoading(false)
-
     if (res.success) {
       toast.success('Mot de passe mis à jour avec succès.')
       resetForm()
@@ -128,7 +131,7 @@ export default function ProfilePage() {
     }
   }
 
-  const isDefaultAvatar = avatar === DEFAULT_AVATAR
+  const isDefaultAvatar = !hasCustomAvatar
 
   return (
     <div
@@ -164,7 +167,7 @@ export default function ProfilePage() {
                 className="w-16 h-16 rounded-xl overflow-hidden transition-all duration-200"
                 style={{
                   boxShadow: avatarSaving
-                    ? '0 0 0 2px var(--neon), 0 0 10px rgba(99,102,241,0.35)'
+                    ? '0 0 0 2px var(--neon), 0 0 10px var(--neon-glow)'
                     : '0 0 0 1.5px var(--border)',
                 }}
               >
@@ -250,7 +253,7 @@ export default function ProfilePage() {
           >
             <div
               className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: 'var(--neon-dim)', border: '1px solid rgba(99,102,241,0.2)' }}
+              style={{ background: 'var(--neon-dim)', border: '1px solid var(--neon-mid)' }}
             >
               <ShieldCheck className="w-3.5 h-3.5" style={{ color: 'var(--neon)' }} />
             </div>

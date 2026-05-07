@@ -4,6 +4,7 @@ import { Monitor, LayoutDashboard, Settings, PanelLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Page } from '../../App'
 import { useAuthStore } from '../../store/authStore'
+import { getDefaultAvatar } from '@/lib/defaultAvatar'
 
 interface Props { page: Page; setPage: (p: Page) => void; userRole: string }
 
@@ -13,33 +14,43 @@ const NAV_ITEMS = [
   { id: 'settings'  as Page, label: 'Paramètres', icon: Settings,        roles: ['admin'] },
 ]
 
-const DEFAULT_AVATAR = `data:image/svg+xml,${encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
-    <rect width="40" height="40" rx="10" fill="#1e2035"/>
-    <circle cx="20" cy="15" r="7" fill="#3d4068"/>
-    <path d="M6 36c0-7.732 6.268-14 14-14s14 6.268 14 14" fill="#3d4068"/>
-  </svg>`
-)}`
-
 export default function Sidebar({ page, setPage, userRole }: Props) {
   const [collapsed, setCollapsed] = useState(false)
   const { user } = useAuthStore()
-  const [avatar, setAvatar] = useState<string>(DEFAULT_AVATAR)
+  // Init lazily so --neon is already applied by initAccent()
+  const [avatar, setAvatar] = useState<string>(() => getDefaultAvatar())
+  // Track whether the user has a real custom avatar (don't override on accent change)
+  const [hasCustomAvatar, setHasCustomAvatar] = useState(false)
 
   const items = NAV_ITEMS.filter(i => i.roles.includes(userRole))
 
   useEffect(() => {
     if (!user?.id) return
     window.playdesk.users.getAvatar(user.id).then(res => {
-      if (res.avatar) setAvatar(res.avatar)
+      if (res.avatar) {
+        setAvatar(res.avatar)
+        setHasCustomAvatar(true)
+      }
     })
   }, [user?.id])
 
+  // Custom avatar uploaded by user
   useEffect(() => {
-    const handler = (e: CustomEvent) => setAvatar(e.detail)
+    const handler = (e: CustomEvent) => {
+      setAvatar(e.detail)
+      setHasCustomAvatar(true)
+    }
     window.addEventListener('playdesk:avatar-updated', handler as EventListener)
     return () => window.removeEventListener('playdesk:avatar-updated', handler as EventListener)
   }, [])
+
+  // Regenerate default avatar when accent color changes
+  useEffect(() => {
+    if (hasCustomAvatar) return
+    const handler = () => setAvatar(getDefaultAvatar())
+    window.addEventListener('playdesk:accent-updated', handler)
+    return () => window.removeEventListener('playdesk:accent-updated', handler)
+  }, [hasCustomAvatar])
 
   return (
     <motion.aside
@@ -149,18 +160,24 @@ function NavBtn({
       style={{
         color:      active ? 'var(--sidebar-foreground)' : 'var(--muted-foreground)',
         background: active ? 'var(--sidebar-accent)'     : 'transparent',
+        outline:    'none',
+        boxShadow:  'none',
       }}
+      onFocus={e  => { e.currentTarget.style.boxShadow = 'none' }}
+      onBlur={e   => { e.currentTarget.style.boxShadow = 'none' }}
       onMouseEnter={e => {
         if (!active) {
           e.currentTarget.style.color      = 'var(--sidebar-foreground)'
           e.currentTarget.style.background = 'var(--sidebar-accent)'
         }
+        e.currentTarget.style.boxShadow = 'none'
       }}
       onMouseLeave={e => {
         if (!active) {
           e.currentTarget.style.color      = 'var(--muted-foreground)'
           e.currentTarget.style.background = 'transparent'
         }
+        e.currentTarget.style.boxShadow = 'none'
       }}
     >
       {active && (
@@ -210,12 +227,18 @@ function ProfileNavBtn({
       )}
       style={{
         background: active ? 'var(--sidebar-accent)' : 'transparent',
+        outline:    'none',
+        boxShadow:  'none',
       }}
+      onFocus={e  => { e.currentTarget.style.boxShadow = 'none' }}
+      onBlur={e   => { e.currentTarget.style.boxShadow = 'none' }}
       onMouseEnter={e => {
         if (!active) e.currentTarget.style.background = 'var(--sidebar-accent)'
+        e.currentTarget.style.boxShadow = 'none'
       }}
       onMouseLeave={e => {
         if (!active) e.currentTarget.style.background = 'transparent'
+        e.currentTarget.style.boxShadow = 'none'
       }}
     >
       {active && (
@@ -231,7 +254,7 @@ function ProfileNavBtn({
         className="w-7 h-7 rounded-lg overflow-hidden shrink-0 transition-all duration-200"
         style={{
           boxShadow: active
-            ? '0 0 0 1.5px var(--neon), 0 0 8px rgba(99,102,241,0.35)'
+            ? '0 0 0 1.5px var(--neon), 0 0 8px var(--neon-glow)'
             : '0 0 0 1px var(--border)',
         }}
       >

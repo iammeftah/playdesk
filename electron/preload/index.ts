@@ -63,4 +63,11 @@ contextBridge.exposeInMainWorld('playdesk', {
     getAvatar:      (id: number) => ipcRenderer.invoke('users:getAvatar', id),
     setAvatar:      (id: number, base64: string) => ipcRenderer.invoke('users:setAvatar', id, base64),
   },
+
+  danger: {
+    exportCsv:   () => ipcRenderer.invoke('danger:exportCsv'),
+    exportExcel: () => ipcRenderer.invoke('danger:exportExcel'),
+    resetDb:     () => ipcRenderer.invoke('danger:resetDb'),
+    relaunch:    () => ipcRenderer.invoke('danger:relaunch'),
+  },
 })

@@ -2,20 +2,17 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 interface Props { data: any[]; period: string }
 
-// Read CSS var value at runtime (for recharts which needs actual color strings)
-function cssVar(name: string, fallback: string): string {
-  if (typeof window === 'undefined') return fallback
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
-}
-
 export default function RevenueChart({ data, period }: Props) {
-  // Detect dark mode
-  const isDark  = document.documentElement.classList.contains('dark')
-  const tickClr = isDark ? '#737373' : '#a3a3a3'
-  const gridClr = isDark ? '#1e1e1e' : '#e5e5e5'
-  const bgClr   = isDark ? '#141414' : '#ffffff'
+  const isDark    = document.documentElement.classList.contains('dark')
+  const tickClr   = isDark ? '#737373' : '#a3a3a3'
+  const gridClr   = isDark ? '#1e1e1e' : '#e5e5e5'
+  const bgClr     = isDark ? '#141414' : '#ffffff'
   const borderClr = isDark ? '#2a2a2a' : '#e5e5e5'
-  const textClr = isDark ? '#fafafa' : '#0a0a0a'
+  const textClr   = isDark ? '#fafafa' : '#0a0a0a'
+
+  // Read the current --neon value at render time so charts follow accent changes
+  const neonColor = getComputedStyle(document.documentElement)
+    .getPropertyValue('--neon').trim() || '#6366f1'
 
   if (!data.length) return (
     <div
@@ -33,8 +30,8 @@ export default function RevenueChart({ data, period }: Props) {
       <AreaChart data={formatted} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
         <defs>
           <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%"  stopColor="#6366f1" stopOpacity={isDark ? 0.3 : 0.15} />
-            <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+            <stop offset="5%"  stopColor={neonColor} stopOpacity={isDark ? 0.3 : 0.15} />
+            <stop offset="95%" stopColor={neonColor} stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke={gridClr} />
@@ -64,11 +61,11 @@ export default function RevenueChart({ data, period }: Props) {
         <Area
           type="monotone"
           dataKey="value"
-          stroke="#6366f1"
+          stroke={neonColor}
           strokeWidth={2}
           fill="url(#revGrad)"
           dot={false}
-          activeDot={{ r: 4, fill: '#6366f1', strokeWidth: 0 }}
+          activeDot={{ r: 4, fill: neonColor, strokeWidth: 0 }}
         />
       </AreaChart>
     </ResponsiveContainer>
