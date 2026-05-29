@@ -1,6 +1,9 @@
 # 🎮 PlayDesk — Système de Gestion de Salle de Jeux
 ## Spécification Complète — v2.0 (finalisée)
 
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/0345fad6-781a-4021-a0a6-b17d2c908bbc" />
+
+
 ---
 
 ## 1. Résumé du Projet
