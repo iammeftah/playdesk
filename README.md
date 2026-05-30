@@ -425,5 +425,3 @@ npm run dist:win
 ---
 
 *Document version: 2.0 — toutes décisions finalisées — prêt à coder*
-# playdesk
-# playdesk
